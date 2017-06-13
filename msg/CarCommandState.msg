@@ -1,0 +1,16 @@
+uint32 priority
+string name
+uint8 NOT_DEFINED=0
+uint8 IDLE=1
+uint8 DRIVING=2
+uint8 PARKING=3
+uint8 RACE=4
+uint8 state
+bool indicatorLeft
+bool indicatorRight
+time startState
+time endState
+float32 steering_front
+float32 steering_rear
+float32 targetSpeed
+float32 targetDistance

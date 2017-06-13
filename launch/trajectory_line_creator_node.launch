@@ -1,0 +1,4 @@
+<launch>
+    <node name="trajectory_line_creator" pkg="trajectory_generator" type="trajectory_line_creator" respawn="false" output="screen">
+    </node>
+</launch>

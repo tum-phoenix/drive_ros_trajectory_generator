@@ -1,0 +1,452 @@
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<title>RTW Report - objectTracker.cpp</title>
+<script language="JavaScript" type="text/javascript" src="rtwreport_utils.js"></script>
+</head>
+<body bgcolor="#eeeeee" text="#1122aa" onload="try {if (top) { if (top.rtwFileOnLoad) top.rtwFileOnLoad(window.document); else local_onload();}} catch(err) {};">
+<p>
+<table border="0" cellspacing="0" cellpadding="6" width="100%%" height="100%%"><tr><td width="100%%" valign="top" bgcolor="#ffffff">
+<h4>File: <a href="../objectTracker.cpp" target="rtwreport_document_frame" id="linkToText_plain">objectTracker.cpp</a></h4>
+<pre id="RTWcode">
+<a name="1"><font color="#888888 "><i>    1   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="2"><font color="#888888 "><i>    2   </i></font></a><font color="#117755"><i>// Academic License - for use in teaching, academic research, and meeting</i></font>
+<a name="3"><font color="#888888 "><i>    3   </i></font></a><font color="#117755"><i>// course requirements at degree granting institutions only.  Not for</i></font>
+<a name="4"><font color="#888888 "><i>    4   </i></font></a><font color="#117755"><i>// government, commercial, or other organizational use.</i></font>
+<a name="5"><font color="#888888 "><i>    5   </i></font></a><font color="#117755"><i>// File: objectTracker.cpp</i></font>
+<a name="6"><font color="#888888 "><i>    6   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="7"><font color="#888888 "><i>    7   </i></font></a><font color="#117755"><i>// MATLAB Coder version            : 3.0</i></font>
+<a name="8"><font color="#888888 "><i>    8   </i></font></a><font color="#117755"><i>// C/C++ source code generated on  : 06-Oct-2015 16:14:26</i></font>
+<a name="9"><font color="#888888 "><i>    9   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="10"><font color="#888888 "><i>   10   </i></font></a>
+<a name="11"><font color="#888888 "><i>   11   </i></font></a><font color="#117755"><i>// Include Files</i></font>
+<a name="12"><font color="#888888 "><i>   12   </i></font></a><font color="#992211">#</font><font color="#992211"><b>include</b></font> <font color="#992211">&quot;rt_nonfinite.h&quot;</font>
+<a name="13"><font color="#888888 "><i>   13   </i></font></a><font color="#992211">#</font><font color="#992211"><b>include</b></font> <font color="#992211">&quot;objectTracker.h&quot;</font>
+<a name="14"><font color="#888888 "><i>   14   </i></font></a><font color="#992211">#</font><font color="#992211"><b>include</b></font> <font color="#992211">&quot;objectTracker_emxutil.h&quot;</font>
+<a name="15"><font color="#888888 "><i>   15   </i></font></a>
+<a name="16"><font color="#888888 "><i>   16   </i></font></a><font color="#117755"><i>// Function Definitions</i></font>
+<a name="17"><font color="#888888 "><i>   17   </i></font></a>
+<a name="18"><font color="#888888 "><i>   18   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="19"><font color="#888888 "><i>   19   </i></font></a><font color="#117755"><i>// x und y Werte sind in Fzg-Koordinaten</i></font>
+<a name="20"><font color="#888888 "><i>   20   </i></font></a><font color="#117755"><i>// Arguments    : short init</i></font>
+<a name="21"><font color="#888888 "><i>   21   </i></font></a><font color="#117755"><i>//                const emxArray_real_T *laneModel</i></font>
+<a name="22"><font color="#888888 "><i>   22   </i></font></a><font color="#117755"><i>//                double lanePieceLength</i></font>
+<a name="23"><font color="#888888 "><i>   23   </i></font></a><font color="#117755"><i>//                double r[4]</i></font>
+<a name="24"><font color="#888888 "><i>   24   </i></font></a><font color="#117755"><i>//                double Pk[16]</i></font>
+<a name="25"><font color="#888888 "><i>   25   </i></font></a><font color="#117755"><i>//                double Q</i></font>
+<a name="26"><font color="#888888 "><i>   26   </i></font></a><font color="#117755"><i>//                double Rx</i></font>
+<a name="27"><font color="#888888 "><i>   27   </i></font></a><font color="#117755"><i>//                double Ry</i></font>
+<a name="28"><font color="#888888 "><i>   28   </i></font></a><font color="#117755"><i>//                double x_measure</i></font>
+<a name="29"><font color="#888888 "><i>   29   </i></font></a><font color="#117755"><i>//                double y_measure</i></font>
+<a name="30"><font color="#888888 "><i>   30   </i></font></a><font color="#117755"><i>//                double delta_x</i></font>
+<a name="31"><font color="#888888 "><i>   31   </i></font></a><font color="#117755"><i>//                short hasMeasurement</i></font>
+<a name="32"><font color="#888888 "><i>   32   </i></font></a><font color="#117755"><i>// Return Type  : void</i></font>
+<a name="33"><font color="#888888 "><i>   33   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="34"><font color="#888888 "><i>   34   </i></font></a><font color="#112266"><b>void</b></font> <a name="fcn_objectTracker">objectTracker</a>(<font color="#112266"><b>short</b></font> init, <font color="#112266"><b>const</b></font> emxArray_real_T *laneModel, <font color="#112266"><b>double</b></font>
+<a name="35"><font color="#888888 "><i>   35   </i></font></a>                   lanePieceLength, <font color="#112266"><b>double</b></font> r[4], <font color="#112266"><b>double</b></font> Pk[16], <font color="#112266"><b>double</b></font> Q, <font color="#112266"><b>double</b></font>
+<a name="36"><font color="#888888 "><i>   36   </i></font></a>                   Rx, <font color="#112266"><b>double</b></font> Ry, <font color="#112266"><b>double</b></font> x_measure, <font color="#112266"><b>double</b></font> y_measure, <font color="#112266"><b>double</b></font>
+<a name="37"><font color="#888888 "><i>   37   </i></font></a>                   delta_x, <font color="#112266"><b>short</b></font> hasMeasurement)
+<a name="38"><font color="#888888 "><i>   38   </i></font></a><b>{</b>
+<a name="39"><font color="#888888 "><i>   39   </i></font></a>  emxArray_real_T *P;
+<a name="40"><font color="#888888 "><i>   40   </i></font></a>  <font color="#112266"><b>int</b></font> i0;
+<a name="41"><font color="#888888 "><i>   41   </i></font></a>  <font color="#112266"><b>int</b></font> r1;
+<a name="42"><font color="#888888 "><i>   42   </i></font></a>  <font color="#112266"><b>double</b></font> phi;
+<a name="43"><font color="#888888 "><i>   43   </i></font></a>  <font color="#112266"><b>int</b></font> s;
+<a name="44"><font color="#888888 "><i>   44   </i></font></a>  emxArray_real_T *b_P;
+<a name="45"><font color="#888888 "><i>   45   </i></font></a>  <font color="#112266"><b>int</b></font> r2;
+<a name="46"><font color="#888888 "><i>   46   </i></font></a>  <font color="#112266"><b>int</b></font> k;
+<a name="47"><font color="#888888 "><i>   47   </i></font></a>  <font color="#112266"><b>int</b></font> loop_ub;
+<a name="48"><font color="#888888 "><i>   48   </i></font></a>  emxArray_real_T *c_P;
+<a name="49"><font color="#888888 "><i>   49   </i></font></a>  emxArray_real_T *d_P;
+<a name="50"><font color="#888888 "><i>   50   </i></font></a>  emxArray_real_T *e_P;
+<a name="51"><font color="#888888 "><i>   51   </i></font></a>  <font color="#112266"><b>double</b></font> D[4];
+<a name="52"><font color="#888888 "><i>   52   </i></font></a>  <font color="#112266"><b>double</b></font> a21;
+<a name="53"><font color="#888888 "><i>   53   </i></font></a>  <font color="#112266"><b>double</b></font> a22;
+<a name="54"><font color="#888888 "><i>   54   </i></font></a>  <font color="#112266"><b>double</b></font> dist_point;
+<a name="55"><font color="#888888 "><i>   55   </i></font></a>  <font color="#112266"><b>double</b></font> a[2];
+<a name="56"><font color="#888888 "><i>   56   </i></font></a>  <font color="#112266"><b>double</b></font> b_x_measure[2];
+<a name="57"><font color="#888888 "><i>   57   </i></font></a>  <font color="#112266"><b>double</b></font> f_P[2];
+<a name="58"><font color="#888888 "><i>   58   </i></font></a>  <font color="#112266"><b>double</b></font> v[2];
+<a name="59"><font color="#888888 "><i>   59   </i></font></a>  <font color="#112266"><b>double</b></font> lambda;
+<a name="60"><font color="#888888 "><i>   60   </i></font></a>  <font color="#112266"><b>double</b></font> b_v;
+<a name="61"><font color="#888888 "><i>   61   </i></font></a>  <font color="#112266"><b>double</b></font> b_a[3];
+<a name="62"><font color="#888888 "><i>   62   </i></font></a>  <font color="#112266"><b>double</b></font> b[3];
+<a name="63"><font color="#888888 "><i>   63   </i></font></a>  <font color="#112266"><b>double</b></font> cp_idx_2;
+<a name="64"><font color="#888888 "><i>   64   </i></font></a>  <font color="#112266"><b>double</b></font> dist_line;
+<a name="65"><font color="#888888 "><i>   65   </i></font></a>  <font color="#112266"><b>double</b></font> d;
+<a name="66"><font color="#888888 "><i>   66   </i></font></a>  <font color="#112266"><b>double</b></font> c_a[4];
+<a name="67"><font color="#888888 "><i>   67   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>const</b></font> <font color="#112266"><b>double</b></font> d_a[16] = <b>{</b> 1.0, 0.0, 0.0, 0.0, 0.01, 1.0, 0.0, 0.0, 0.0,
+<a name="68"><font color="#888888 "><i>   68   </i></font></a>    0.0, 1.0, 0.0, 0.0, 0.0, 0.01, 1.0 <b>}</b>;
+<a name="69"><font color="#888888 "><i>   69   </i></font></a>
+<a name="70"><font color="#888888 "><i>   70   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>const</b></font> <font color="#112266"><b>signed</b></font> <font color="#112266"><b>char</b></font> e_a[4] = <b>{</b> -1, 0, 0, 0 <b>}</b>;
+<a name="71"><font color="#888888 "><i>   71   </i></font></a>
+<a name="72"><font color="#888888 "><i>   72   </i></font></a>  <font color="#112266"><b>double</b></font> f_a[16];
+<a name="73"><font color="#888888 "><i>   73   </i></font></a>  <font color="#112266"><b>double</b></font> g_a[16];
+<a name="74"><font color="#888888 "><i>   74   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>const</b></font> <font color="#112266"><b>double</b></font> b_b[16] = <b>{</b> 1.0, 0.01, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0,
+<a name="75"><font color="#888888 "><i>   75   </i></font></a>    0.0, 1.0, 0.01, 0.0, 0.0, 0.0, 1.0 <b>}</b>;
+<a name="76"><font color="#888888 "><i>   76   </i></font></a>
+<a name="77"><font color="#888888 "><i>   77   </i></font></a>  <font color="#112266"><b>double</b></font> b_d[16];
+<a name="78"><font color="#888888 "><i>   78   </i></font></a>  <font color="#112266"><b>double</b></font> h_a[8];
+<a name="79"><font color="#888888 "><i>   79   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>const</b></font> <font color="#112266"><b>signed</b></font> <font color="#112266"><b>char</b></font> i_a[8] = <b>{</b> 1, 0, 0, 0, 0, 1, 0, 0 <b>}</b>;
+<a name="80"><font color="#888888 "><i>   80   </i></font></a>
+<a name="81"><font color="#888888 "><i>   81   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>const</b></font> <font color="#112266"><b>signed</b></font> <font color="#112266"><b>char</b></font> c_b[8] = <b>{</b> 1, 0, 0, 0, 0, 0, 1, 0 <b>}</b>;
+<a name="82"><font color="#888888 "><i>   82   </i></font></a>
+<a name="83"><font color="#888888 "><i>   83   </i></font></a>  <font color="#112266"><b>double</b></font> b_Rx[4];
+<a name="84"><font color="#888888 "><i>   84   </i></font></a>  <font color="#112266"><b>double</b></font> S[4];
+<a name="85"><font color="#888888 "><i>   85   </i></font></a>  <font color="#112266"><b>double</b></font> y[8];
+<a name="86"><font color="#888888 "><i>   86   </i></font></a>  <font color="#112266"><b>double</b></font> K[8];
+<a name="87"><font color="#888888 "><i>   87   </i></font></a>  <font color="#112266"><b>double</b></font> c_x_measure[2];
+<a name="88"><font color="#888888 "><i>   88   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxInit_real_T1" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real_T1');" target="_self"><font color="#1122aa">emxInit_real_T1</font></a>(&amp;P, 2);
+<a name="89"><font color="#888888 "><i>   89   </i></font></a>
+<a name="90"><font color="#888888 "><i>   90   </i></font></a>  <font color="#117755"><i>//  init: [scalar] set to "1" once when object is first detected to initialize state vector, then set to "0" </i></font>
+<a name="91"><font color="#888888 "><i>   91   </i></font></a>  <font color="#117755"><i>//  laneModel: [px1] state vector of the current lane model</i></font>
+<a name="92"><font color="#888888 "><i>   92   </i></font></a>  <font color="#117755"><i>//  lanePieceLength: [scalar] length of linear pieces in the lane model</i></font>
+<a name="93"><font color="#888888 "><i>   93   </i></font></a>  <font color="#117755"><i>//  r: [4x1] state vector of the object being tracked</i></font>
+<a name="94"><font color="#888888 "><i>   94   </i></font></a>  <font color="#117755"><i>//      [ s_x (arc length from vehicle to object in the diection of the lane model);  </i></font>
+<a name="95"><font color="#888888 "><i>   95   </i></font></a>  <font color="#117755"><i>//        v_x (velocity of object in direction of lane);</i></font>
+<a name="96"><font color="#888888 "><i>   96   </i></font></a>  <font color="#117755"><i>//        s_y (lateral position of object relative to middle lane);</i></font>
+<a name="97"><font color="#888888 "><i>   97   </i></font></a>  <font color="#117755"><i>//        v_y (lateral velocity of object)]</i></font>
+<a name="98"><font color="#888888 "><i>   98   </i></font></a>  <font color="#117755"><i>//  Pk:[4x4] covariance of the current state</i></font>
+<a name="99"><font color="#888888 "><i>   99   </i></font></a>  <font color="#117755"><i>//  Q: [scalar] standard deviation of the state transition (how reliable is delta_x?)  </i></font>
+<a name="100"><font color="#888888 "><i>  100   </i></font></a>  <font color="#117755"><i>//  Rx: [scalar] standard deviation of the measurement in lane direction</i></font>
+<a name="101"><font color="#888888 "><i>  101   </i></font></a>  <font color="#117755"><i>//  Ry: [scalar] standard deviation of the measurement lateral to the lane</i></font>
+<a name="102"><font color="#888888 "><i>  102   </i></font></a>  <font color="#117755"><i>//  x_measure: [nx1] measured x values of the object being tracked</i></font>
+<a name="103"><font color="#888888 "><i>  103   </i></font></a>  <font color="#117755"><i>//  y_measure: [nx1] measured y values of the object being tracked</i></font>
+<a name="104"><font color="#888888 "><i>  104   </i></font></a>  <font color="#117755"><i>//  delta_x: [scalar] forward movement of the vehicle relative to the lane model </i></font>
+<a name="105"><font color="#888888 "><i>  105   </i></font></a>  <font color="#117755"><i>// % find distance between lane model and object measurements to get the measurment of s (s_measure) </i></font>
+<a name="106"><font color="#888888 "><i>  106   </i></font></a>  i0 = P-&gt;size[0] * P-&gt;size[1];
+<a name="107"><font color="#888888 "><i>  107   </i></font></a>  P-&gt;size[0] = laneModel-&gt;size[0];
+<a name="108"><font color="#888888 "><i>  108   </i></font></a>  P-&gt;size[1] = 3;
+<a name="109"><font color="#888888 "><i>  109   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxEnsureCapacity" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxEnsureCapacity');" target="_self"><font color="#1122aa">emxEnsureCapacity</font></a>((emxArray__common *)P, i0, (<font color="#112266"><b>int</b></font>)<font color="#112266"><b>sizeof</b></font>(<font color="#112266"><b>double</b></font>));
+<a name="110"><font color="#888888 "><i>  110   </i></font></a>  r1 = laneModel-&gt;size[0] * 3;
+<a name="111"><font color="#888888 "><i>  111   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; r1; i0++) <b>{</b>
+<a name="112"><font color="#888888 "><i>  112   </i></font></a>    P-&gt;data[i0] = 0.0;
+<a name="113"><font color="#888888 "><i>  113   </i></font></a>  <b>}</b>
+<a name="114"><font color="#888888 "><i>  114   </i></font></a>
+<a name="115"><font color="#888888 "><i>  115   </i></font></a>  <font color="#117755"><i>// x, y, phi</i></font>
+<a name="116"><font color="#888888 "><i>  116   </i></font></a>  phi = laneModel-&gt;data[1];
+<a name="117"><font color="#888888 "><i>  117   </i></font></a>
+<a name="118"><font color="#888888 "><i>  118   </i></font></a>  <font color="#117755"><i>// erster Punkt</i></font>
+<a name="119"><font color="#888888 "><i>  119   </i></font></a>  P-&gt;data[0] = 0.0;
+<a name="120"><font color="#888888 "><i>  120   </i></font></a>  P-&gt;data[P-&gt;size[0]] = laneModel-&gt;data[0];
+<a name="121"><font color="#888888 "><i>  121   </i></font></a>  P-&gt;data[P-&gt;size[0] &lt;&lt; 1] = laneModel-&gt;data[1];
+<a name="122"><font color="#888888 "><i>  122   </i></font></a>
+<a name="123"><font color="#888888 "><i>  123   </i></font></a>  <font color="#117755"><i>// zweiter Punkt</i></font>
+<a name="124"><font color="#888888 "><i>  124   </i></font></a>  P-&gt;data[1] = P-&gt;data[0] + lanePieceLength * cos(laneModel-&gt;data[1]);
+<a name="125"><font color="#888888 "><i>  125   </i></font></a>  P-&gt;data[1 + P-&gt;size[0]] = P-&gt;data[P-&gt;size[0]] + lanePieceLength * sin
+<a name="126"><font color="#888888 "><i>  126   </i></font></a>    (laneModel-&gt;data[1]);
+<a name="127"><font color="#888888 "><i>  127   </i></font></a>  P-&gt;data[1 + (P-&gt;size[0] &lt;&lt; 1)] = laneModel-&gt;data[1];
+<a name="128"><font color="#888888 "><i>  128   </i></font></a>  <font color="#112266"><b>for</b></font> (s = 2; s - 2 &lt;= laneModel-&gt;size[0] - 3; s++) <b>{</b>
+<a name="129"><font color="#888888 "><i>  129   </i></font></a>    <font color="#117755"><i>//  "-" wegen VZ-Definition der Kruemmung</i></font>
+<a name="130"><font color="#888888 "><i>  130   </i></font></a>    phi = (phi + 2.0 * acos(-lanePieceLength * laneModel-&gt;data[s] / 2.0)) -
+<a name="131"><font color="#888888 "><i>  131   </i></font></a>      3.1415926535897931;
+<a name="132"><font color="#888888 "><i>  132   </i></font></a>    P-&gt;data[s] = P-&gt;data[s - 1] + lanePieceLength * cos(phi);
+<a name="133"><font color="#888888 "><i>  133   </i></font></a>    P-&gt;data[s + P-&gt;size[0]] = P-&gt;data[(s + P-&gt;size[0]) - 1] + lanePieceLength *
+<a name="134"><font color="#888888 "><i>  134   </i></font></a>      sin(phi);
+<a name="135"><font color="#888888 "><i>  135   </i></font></a>    P-&gt;data[s + (P-&gt;size[0] &lt;&lt; 1)] = phi;
+<a name="136"><font color="#888888 "><i>  136   </i></font></a>  <b>}</b>
+<a name="137"><font color="#888888 "><i>  137   </i></font></a>
+<a name="138"><font color="#888888 "><i>  138   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxInit_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real_T');" target="_self"><font color="#1122aa">emxInit_real_T</font></a>(&amp;b_P, 1);
+<a name="139"><font color="#888888 "><i>  139   </i></font></a>  r1 = P-&gt;size[0];
+<a name="140"><font color="#888888 "><i>  140   </i></font></a>  r2 = P-&gt;size[0];
+<a name="141"><font color="#888888 "><i>  141   </i></font></a>  k = P-&gt;size[0];
+<a name="142"><font color="#888888 "><i>  142   </i></font></a>  loop_ub = P-&gt;size[0];
+<a name="143"><font color="#888888 "><i>  143   </i></font></a>  i0 = b_P-&gt;size[0];
+<a name="144"><font color="#888888 "><i>  144   </i></font></a>  b_P-&gt;size[0] = loop_ub;
+<a name="145"><font color="#888888 "><i>  145   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxEnsureCapacity" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxEnsureCapacity');" target="_self"><font color="#1122aa">emxEnsureCapacity</font></a>((emxArray__common *)b_P, i0, (<font color="#112266"><b>int</b></font>)<font color="#112266"><b>sizeof</b></font>(<font color="#112266"><b>double</b></font>));
+<a name="146"><font color="#888888 "><i>  146   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; loop_ub; i0++) <b>{</b>
+<a name="147"><font color="#888888 "><i>  147   </i></font></a>    b_P-&gt;data[i0] = P-&gt;data[i0];
+<a name="148"><font color="#888888 "><i>  148   </i></font></a>  <b>}</b>
+<a name="149"><font color="#888888 "><i>  149   </i></font></a>
+<a name="150"><font color="#888888 "><i>  150   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxInit_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real_T');" target="_self"><font color="#1122aa">emxInit_real_T</font></a>(&amp;c_P, 1);
+<a name="151"><font color="#888888 "><i>  151   </i></font></a>  loop_ub = P-&gt;size[0];
+<a name="152"><font color="#888888 "><i>  152   </i></font></a>  i0 = c_P-&gt;size[0];
+<a name="153"><font color="#888888 "><i>  153   </i></font></a>  c_P-&gt;size[0] = loop_ub;
+<a name="154"><font color="#888888 "><i>  154   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxEnsureCapacity" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxEnsureCapacity');" target="_self"><font color="#1122aa">emxEnsureCapacity</font></a>((emxArray__common *)c_P, i0, (<font color="#112266"><b>int</b></font>)<font color="#112266"><b>sizeof</b></font>(<font color="#112266"><b>double</b></font>));
+<a name="155"><font color="#888888 "><i>  155   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; loop_ub; i0++) <b>{</b>
+<a name="156"><font color="#888888 "><i>  156   </i></font></a>    c_P-&gt;data[i0] = P-&gt;data[i0 + P-&gt;size[0]];
+<a name="157"><font color="#888888 "><i>  157   </i></font></a>  <b>}</b>
+<a name="158"><font color="#888888 "><i>  158   </i></font></a>
+<a name="159"><font color="#888888 "><i>  159   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxInit_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real_T');" target="_self"><font color="#1122aa">emxInit_real_T</font></a>(&amp;d_P, 1);
+<a name="160"><font color="#888888 "><i>  160   </i></font></a>  loop_ub = P-&gt;size[0];
+<a name="161"><font color="#888888 "><i>  161   </i></font></a>  i0 = d_P-&gt;size[0];
+<a name="162"><font color="#888888 "><i>  162   </i></font></a>  d_P-&gt;size[0] = loop_ub;
+<a name="163"><font color="#888888 "><i>  163   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxEnsureCapacity" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxEnsureCapacity');" target="_self"><font color="#1122aa">emxEnsureCapacity</font></a>((emxArray__common *)d_P, i0, (<font color="#112266"><b>int</b></font>)<font color="#112266"><b>sizeof</b></font>(<font color="#112266"><b>double</b></font>));
+<a name="164"><font color="#888888 "><i>  164   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; loop_ub; i0++) <b>{</b>
+<a name="165"><font color="#888888 "><i>  165   </i></font></a>    d_P-&gt;data[i0] = P-&gt;data[i0 + (P-&gt;size[0] &lt;&lt; 1)];
+<a name="166"><font color="#888888 "><i>  166   </i></font></a>  <b>}</b>
+<a name="167"><font color="#888888 "><i>  167   </i></font></a>
+<a name="168"><font color="#888888 "><i>  168   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxFree_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxFree_real_T');" target="_self"><font color="#1122aa">emxFree_real_T</font></a>(&amp;P);
+<a name="169"><font color="#888888 "><i>  169   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxInit_real_T1" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real_T1');" target="_self"><font color="#1122aa">emxInit_real_T1</font></a>(&amp;e_P, 2);
+<a name="170"><font color="#888888 "><i>  170   </i></font></a>  i0 = e_P-&gt;size[0] * e_P-&gt;size[1];
+<a name="171"><font color="#888888 "><i>  171   </i></font></a>  e_P-&gt;size[0] = r1;
+<a name="172"><font color="#888888 "><i>  172   </i></font></a>  e_P-&gt;size[1] = 3;
+<a name="173"><font color="#888888 "><i>  173   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxEnsureCapacity" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxEnsureCapacity');" target="_self"><font color="#1122aa">emxEnsureCapacity</font></a>((emxArray__common *)e_P, i0, (<font color="#112266"><b>int</b></font>)<font color="#112266"><b>sizeof</b></font>(<font color="#112266"><b>double</b></font>));
+<a name="174"><font color="#888888 "><i>  174   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; r1; i0++) <b>{</b>
+<a name="175"><font color="#888888 "><i>  175   </i></font></a>    e_P-&gt;data[i0] = b_P-&gt;data[i0];
+<a name="176"><font color="#888888 "><i>  176   </i></font></a>  <b>}</b>
+<a name="177"><font color="#888888 "><i>  177   </i></font></a>
+<a name="178"><font color="#888888 "><i>  178   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxFree_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxFree_real_T');" target="_self"><font color="#1122aa">emxFree_real_T</font></a>(&amp;b_P);
+<a name="179"><font color="#888888 "><i>  179   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; r2; i0++) <b>{</b>
+<a name="180"><font color="#888888 "><i>  180   </i></font></a>    e_P-&gt;data[i0 + e_P-&gt;size[0]] = c_P-&gt;data[i0];
+<a name="181"><font color="#888888 "><i>  181   </i></font></a>  <b>}</b>
+<a name="182"><font color="#888888 "><i>  182   </i></font></a>
+<a name="183"><font color="#888888 "><i>  183   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxFree_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxFree_real_T');" target="_self"><font color="#1122aa">emxFree_real_T</font></a>(&amp;c_P);
+<a name="184"><font color="#888888 "><i>  184   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; k; i0++) <b>{</b>
+<a name="185"><font color="#888888 "><i>  185   </i></font></a>    e_P-&gt;data[i0 + (e_P-&gt;size[0] &lt;&lt; 1)] = d_P-&gt;data[i0];
+<a name="186"><font color="#888888 "><i>  186   </i></font></a>  <b>}</b>
+<a name="187"><font color="#888888 "><i>  187   </i></font></a>
+<a name="188"><font color="#888888 "><i>  188   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxFree_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxFree_real_T');" target="_self"><font color="#1122aa">emxFree_real_T</font></a>(&amp;d_P);
+<a name="189"><font color="#888888 "><i>  189   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 4; i0++) <b>{</b>
+<a name="190"><font color="#888888 "><i>  190   </i></font></a>    D[i0] = 10000.0;
+<a name="191"><font color="#888888 "><i>  191   </i></font></a>  <b>}</b>
+<a name="192"><font color="#888888 "><i>  192   </i></font></a>
+<a name="193"><font color="#888888 "><i>  193   </i></font></a>  <font color="#112266"><b>for</b></font> (s = 0; s &lt; laneModel-&gt;size[0]; s++) <b>{</b>
+<a name="194"><font color="#888888 "><i>  194   </i></font></a>    a21 = e_P-&gt;data[s] - x_measure;
+<a name="195"><font color="#888888 "><i>  195   </i></font></a>    a22 = e_P-&gt;data[s + e_P-&gt;size[0]] - y_measure;
+<a name="196"><font color="#888888 "><i>  196   </i></font></a>    dist_point = sqrt(a21 * a21 + a22 * a22);
+<a name="197"><font color="#888888 "><i>  197   </i></font></a>    <font color="#112266"><b>if</b></font> (dist_point &lt; D[2]) <b>{</b>
+<a name="198"><font color="#888888 "><i>  198   </i></font></a>      D[0] = 1.0 + (<font color="#112266"><b>double</b></font>)s;
+<a name="199"><font color="#888888 "><i>  199   </i></font></a>      D[1] = 0.0;
+<a name="200"><font color="#888888 "><i>  200   </i></font></a>      D[2] = dist_point;
+<a name="201"><font color="#888888 "><i>  201   </i></font></a>      a[0] = (<font color="#112266"><b>unsigned</b></font> <font color="#112266"><b>int</b></font>)laneModel-&gt;size[0];
+<a name="202"><font color="#888888 "><i>  202   </i></font></a>      a[1] = s + 2U;
+<a name="203"><font color="#888888 "><i>  203   </i></font></a>      r1 = (<font color="#112266"><b>int</b></font>)(<font color="#112266"><b>unsigned</b></font> <font color="#112266"><b>int</b></font>)a[0] - 1;
+<a name="204"><font color="#888888 "><i>  204   </i></font></a>      <font color="#112266"><b>if</b></font> ((<font color="#112266"><b>unsigned</b></font> <font color="#112266"><b>int</b></font>)a[1] &lt; (<font color="#112266"><b>unsigned</b></font> <font color="#112266"><b>int</b></font>)a[0]) <b>{</b>
+<a name="205"><font color="#888888 "><i>  205   </i></font></a>        r1 = (<font color="#112266"><b>int</b></font>)(<font color="#112266"><b>unsigned</b></font> <font color="#112266"><b>int</b></font>)a[1] - 1;
+<a name="206"><font color="#888888 "><i>  206   </i></font></a>      <b>}</b>
+<a name="207"><font color="#888888 "><i>  207   </i></font></a>
+<a name="208"><font color="#888888 "><i>  208   </i></font></a>      <font color="#112266"><b>if</b></font> (laneModel-&gt;data[r1] &lt; 0.0) <b>{</b>
+<a name="209"><font color="#888888 "><i>  209   </i></font></a>        a21 = -1.0;
+<a name="210"><font color="#888888 "><i>  210   </i></font></a>      <b>}</b> <font color="#112266"><b>else</b></font> <font color="#112266"><b>if</b></font> (laneModel-&gt;data[r1] &gt; 0.0) <b>{</b>
+<a name="211"><font color="#888888 "><i>  211   </i></font></a>        a21 = 1.0;
+<a name="212"><font color="#888888 "><i>  212   </i></font></a>      <b>}</b> <font color="#112266"><b>else</b></font> <font color="#112266"><b>if</b></font> (laneModel-&gt;data[r1] == 0.0) <b>{</b>
+<a name="213"><font color="#888888 "><i>  213   </i></font></a>        a21 = 0.0;
+<a name="214"><font color="#888888 "><i>  214   </i></font></a>      <b>}</b> <font color="#112266"><b>else</b></font> <b>{</b>
+<a name="215"><font color="#888888 "><i>  215   </i></font></a>        a21 = laneModel-&gt;data[r1];
+<a name="216"><font color="#888888 "><i>  216   </i></font></a>      <b>}</b>
+<a name="217"><font color="#888888 "><i>  217   </i></font></a>
+<a name="218"><font color="#888888 "><i>  218   </i></font></a>      D[3] = -a21;
+<a name="219"><font color="#888888 "><i>  219   </i></font></a>
+<a name="220"><font color="#888888 "><i>  220   </i></font></a>      <font color="#117755"><i>//  positive Krümmung -&gt; vorzeichen von d negativ (und anders rum)</i></font>
+<a name="221"><font color="#888888 "><i>  221   </i></font></a>    <b>}</b>
+<a name="222"><font color="#888888 "><i>  222   </i></font></a>
+<a name="223"><font color="#888888 "><i>  223   </i></font></a>    <font color="#112266"><b>if</b></font> (1 + s &gt; 1) <b>{</b>
+<a name="224"><font color="#888888 "><i>  224   </i></font></a>      a[0] = e_P-&gt;data[s - 1];
+<a name="225"><font color="#888888 "><i>  225   </i></font></a>      a[1] = e_P-&gt;data[(s + e_P-&gt;size[0]) - 1];
+<a name="226"><font color="#888888 "><i>  226   </i></font></a>      b_x_measure[0] = x_measure;
+<a name="227"><font color="#888888 "><i>  227   </i></font></a>      b_x_measure[1] = y_measure;
+<a name="228"><font color="#888888 "><i>  228   </i></font></a>
+<a name="229"><font color="#888888 "><i>  229   </i></font></a>      <font color="#117755"><i>// Abstand d zwischen der Gerade g (von P in Richtung Q) und dem Punkt M</i></font>
+<a name="230"><font color="#888888 "><i>  230   </i></font></a>      <font color="#117755"><i>// S ist der Punkt auf g mit kleinstem Abstand zu M</i></font>
+<a name="231"><font color="#888888 "><i>  231   </i></font></a>      f_P[0] = e_P-&gt;data[s];
+<a name="232"><font color="#888888 "><i>  232   </i></font></a>      f_P[1] = e_P-&gt;data[s + e_P-&gt;size[0]];
+<a name="233"><font color="#888888 "><i>  233   </i></font></a>      <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 2; i0++) <b>{</b>
+<a name="234"><font color="#888888 "><i>  234   </i></font></a>        v[i0] = f_P[i0] - a[i0];
+<a name="235"><font color="#888888 "><i>  235   </i></font></a>      <b>}</b>
+<a name="236"><font color="#888888 "><i>  236   </i></font></a>
+<a name="237"><font color="#888888 "><i>  237   </i></font></a>      lambda = -(v[0] * (a[0] - x_measure) + v[1] * (a[1] - y_measure)) / (v[0] *
+<a name="238"><font color="#888888 "><i>  238   </i></font></a>        v[0] + v[1] * v[1]);
+<a name="239"><font color="#888888 "><i>  239   </i></font></a>
+<a name="240"><font color="#888888 "><i>  240   </i></font></a>      <font color="#117755"><i>// Kreuzprodukt für Vorzeichen von d</i></font>
+<a name="241"><font color="#888888 "><i>  241   </i></font></a>      <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 2; i0++) <b>{</b>
+<a name="242"><font color="#888888 "><i>  242   </i></font></a>        b_v = a[i0] + lambda * v[i0];
+<a name="243"><font color="#888888 "><i>  243   </i></font></a>        b_a[i0] = b_v - a[i0];
+<a name="244"><font color="#888888 "><i>  244   </i></font></a>        b[i0] = b_x_measure[i0] - b_v;
+<a name="245"><font color="#888888 "><i>  245   </i></font></a>        v[i0] = b_v;
+<a name="246"><font color="#888888 "><i>  246   </i></font></a>      <b>}</b>
+<a name="247"><font color="#888888 "><i>  247   </i></font></a>
+<a name="248"><font color="#888888 "><i>  248   </i></font></a>      cp_idx_2 = b_a[0] * b[1] - b_a[1] * b[0];
+<a name="249"><font color="#888888 "><i>  249   </i></font></a>      a21 = x_measure - v[0];
+<a name="250"><font color="#888888 "><i>  250   </i></font></a>      a22 = y_measure - v[1];
+<a name="251"><font color="#888888 "><i>  251   </i></font></a>      dist_line = sqrt(a21 * a21 + a22 * a22);
+<a name="252"><font color="#888888 "><i>  252   </i></font></a>      <font color="#112266"><b>if</b></font> ((dist_line &lt; D[2]) &amp;&amp; (lambda &gt; 0.0) &amp;&amp; (lambda &lt; 1.0)) <b>{</b>
+<a name="253"><font color="#888888 "><i>  253   </i></font></a>        D[0] = (1.0 + (<font color="#112266"><b>double</b></font>)s) - 1.0;
+<a name="254"><font color="#888888 "><i>  254   </i></font></a>        D[1] = lambda;
+<a name="255"><font color="#888888 "><i>  255   </i></font></a>        D[2] = dist_line;
+<a name="256"><font color="#888888 "><i>  256   </i></font></a>        <font color="#112266"><b>if</b></font> (cp_idx_2 &lt; 0.0) <b>{</b>
+<a name="257"><font color="#888888 "><i>  257   </i></font></a>          D[3] = -1.0;
+<a name="258"><font color="#888888 "><i>  258   </i></font></a>        <b>}</b> <font color="#112266"><b>else</b></font> <font color="#112266"><b>if</b></font> (cp_idx_2 &gt; 0.0) <b>{</b>
+<a name="259"><font color="#888888 "><i>  259   </i></font></a>          D[3] = 1.0;
+<a name="260"><font color="#888888 "><i>  260   </i></font></a>        <b>}</b> <font color="#112266"><b>else</b></font> <font color="#112266"><b>if</b></font> (cp_idx_2 == 0.0) <b>{</b>
+<a name="261"><font color="#888888 "><i>  261   </i></font></a>          D[3] = 0.0;
+<a name="262"><font color="#888888 "><i>  262   </i></font></a>        <b>}</b> <font color="#112266"><b>else</b></font> <b>{</b>
+<a name="263"><font color="#888888 "><i>  263   </i></font></a>          D[3] = cp_idx_2;
+<a name="264"><font color="#888888 "><i>  264   </i></font></a>        <b>}</b>
+<a name="265"><font color="#888888 "><i>  265   </i></font></a>
+<a name="266"><font color="#888888 "><i>  266   </i></font></a>        <font color="#117755"><i>//  vorzeichen von d</i></font>
+<a name="267"><font color="#888888 "><i>  267   </i></font></a>      <b>}</b>
+<a name="268"><font color="#888888 "><i>  268   </i></font></a>    <b>}</b>
+<a name="269"><font color="#888888 "><i>  269   </i></font></a>  <b>}</b>
+<a name="270"><font color="#888888 "><i>  270   </i></font></a>
+<a name="271"><font color="#888888 "><i>  271   </i></font></a>  <a href="objectTracker_emxutil_cpp.html#fcn_emxFree_real_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxFree_real_T');" target="_self"><font color="#1122aa">emxFree_real_T</font></a>(&amp;e_P);
+<a name="272"><font color="#888888 "><i>  272   </i></font></a>  y_measure = D[3] * D[2];
+<a name="273"><font color="#888888 "><i>  273   </i></font></a>  x_measure = ((D[0] + D[1]) - 1.0) * lanePieceLength;
+<a name="274"><font color="#888888 "><i>  274   </i></font></a>
+<a name="275"><font color="#888888 "><i>  275   </i></font></a>  <font color="#117755"><i>//  initialize the state vector on first object detection</i></font>
+<a name="276"><font color="#888888 "><i>  276   </i></font></a>  <font color="#112266"><b>if</b></font> (init == 1) <b>{</b>
+<a name="277"><font color="#888888 "><i>  277   </i></font></a>    r[0] = x_measure;
+<a name="278"><font color="#888888 "><i>  278   </i></font></a>    r[1] = 0.0;
+<a name="279"><font color="#888888 "><i>  279   </i></font></a>    r[2] = y_measure;
+<a name="280"><font color="#888888 "><i>  280   </i></font></a>    r[3] = 0.0;
+<a name="281"><font color="#888888 "><i>  281   </i></font></a>  <b>}</b> <font color="#112266"><b>else</b></font> <b>{</b>
+<a name="282"><font color="#888888 "><i>  282   </i></font></a>    <font color="#117755"><i>// % state space model matrices</i></font>
+<a name="283"><font color="#888888 "><i>  283   </i></font></a>    <font color="#117755"><i>//  covariance of the state transition</i></font>
+<a name="284"><font color="#888888 "><i>  284   </i></font></a>    d = Q * Q;
+<a name="285"><font color="#888888 "><i>  285   </i></font></a>
+<a name="286"><font color="#888888 "><i>  286   </i></font></a>    <font color="#117755"><i>// % Kalman filter</i></font>
+<a name="287"><font color="#888888 "><i>  287   </i></font></a>    <font color="#117755"><i>//  prediction</i></font>
+<a name="288"><font color="#888888 "><i>  288   </i></font></a>    <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 4; i0++) <b>{</b>
+<a name="289"><font color="#888888 "><i>  289   </i></font></a>      a21 = 0.0;
+<a name="290"><font color="#888888 "><i>  290   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 4; r1++) <b>{</b>
+<a name="291"><font color="#888888 "><i>  291   </i></font></a>        a21 += d_a[i0 + (r1 &lt;&lt; 2)] * r[r1];
+<a name="292"><font color="#888888 "><i>  292   </i></font></a>      <b>}</b>
+<a name="293"><font color="#888888 "><i>  293   </i></font></a>
+<a name="294"><font color="#888888 "><i>  294   </i></font></a>      c_a[i0] = a21 + (<font color="#112266"><b>double</b></font>)e_a[i0] * delta_x;
+<a name="295"><font color="#888888 "><i>  295   </i></font></a>    <b>}</b>
+<a name="296"><font color="#888888 "><i>  296   </i></font></a>
+<a name="297"><font color="#888888 "><i>  297   </i></font></a>    <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 4; i0++) <b>{</b>
+<a name="298"><font color="#888888 "><i>  298   </i></font></a>      r[i0] = c_a[i0];
+<a name="299"><font color="#888888 "><i>  299   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 4; r1++) <b>{</b>
+<a name="300"><font color="#888888 "><i>  300   </i></font></a>        f_a[i0 + (r1 &lt;&lt; 2)] = 0.0;
+<a name="301"><font color="#888888 "><i>  301   </i></font></a>        <font color="#112266"><b>for</b></font> (r2 = 0; r2 &lt; 4; r2++) <b>{</b>
+<a name="302"><font color="#888888 "><i>  302   </i></font></a>          f_a[i0 + (r1 &lt;&lt; 2)] += d_a[i0 + (r2 &lt;&lt; 2)] * Pk[r2 + (r1 &lt;&lt; 2)];
+<a name="303"><font color="#888888 "><i>  303   </i></font></a>        <b>}</b>
+<a name="304"><font color="#888888 "><i>  304   </i></font></a>      <b>}</b>
+<a name="305"><font color="#888888 "><i>  305   </i></font></a>
+<a name="306"><font color="#888888 "><i>  306   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 4; r1++) <b>{</b>
+<a name="307"><font color="#888888 "><i>  307   </i></font></a>        g_a[i0 + (r1 &lt;&lt; 2)] = 0.0;
+<a name="308"><font color="#888888 "><i>  308   </i></font></a>        <font color="#112266"><b>for</b></font> (r2 = 0; r2 &lt; 4; r2++) <b>{</b>
+<a name="309"><font color="#888888 "><i>  309   </i></font></a>          g_a[i0 + (r1 &lt;&lt; 2)] += f_a[i0 + (r2 &lt;&lt; 2)] * b_b[r2 + (r1 &lt;&lt; 2)];
+<a name="310"><font color="#888888 "><i>  310   </i></font></a>        <b>}</b>
+<a name="311"><font color="#888888 "><i>  311   </i></font></a>      <b>}</b>
+<a name="312"><font color="#888888 "><i>  312   </i></font></a>    <b>}</b>
+<a name="313"><font color="#888888 "><i>  313   </i></font></a>
+<a name="314"><font color="#888888 "><i>  314   </i></font></a>    b_d[0] = d;
+<a name="315"><font color="#888888 "><i>  315   </i></font></a>    b_d[4] = d * 0.01;
+<a name="316"><font color="#888888 "><i>  316   </i></font></a>    b_d[8] = 0.0;
+<a name="317"><font color="#888888 "><i>  317   </i></font></a>    b_d[12] = 0.0;
+<a name="318"><font color="#888888 "><i>  318   </i></font></a>    b_d[1] = d * 0.01;
+<a name="319"><font color="#888888 "><i>  319   </i></font></a>    b_d[5] = d * 0.0001;
+<a name="320"><font color="#888888 "><i>  320   </i></font></a>    b_d[9] = 0.0;
+<a name="321"><font color="#888888 "><i>  321   </i></font></a>    b_d[13] = 0.0;
+<a name="322"><font color="#888888 "><i>  322   </i></font></a>    b_d[2] = 0.0;
+<a name="323"><font color="#888888 "><i>  323   </i></font></a>    b_d[6] = 0.0;
+<a name="324"><font color="#888888 "><i>  324   </i></font></a>    b_d[10] = d;
+<a name="325"><font color="#888888 "><i>  325   </i></font></a>    b_d[14] = d * 0.01;
+<a name="326"><font color="#888888 "><i>  326   </i></font></a>    b_d[3] = 0.0;
+<a name="327"><font color="#888888 "><i>  327   </i></font></a>    b_d[7] = 0.0;
+<a name="328"><font color="#888888 "><i>  328   </i></font></a>    b_d[11] = d * 0.01;
+<a name="329"><font color="#888888 "><i>  329   </i></font></a>    b_d[15] = d * 0.0001;
+<a name="330"><font color="#888888 "><i>  330   </i></font></a>    <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 4; i0++) <b>{</b>
+<a name="331"><font color="#888888 "><i>  331   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 4; r1++) <b>{</b>
+<a name="332"><font color="#888888 "><i>  332   </i></font></a>        Pk[r1 + (i0 &lt;&lt; 2)] = g_a[r1 + (i0 &lt;&lt; 2)] + b_d[r1 + (i0 &lt;&lt; 2)];
+<a name="333"><font color="#888888 "><i>  333   </i></font></a>      <b>}</b>
+<a name="334"><font color="#888888 "><i>  334   </i></font></a>    <b>}</b>
+<a name="335"><font color="#888888 "><i>  335   </i></font></a>
+<a name="336"><font color="#888888 "><i>  336   </i></font></a>    <font color="#117755"><i>//  kalman gain</i></font>
+<a name="337"><font color="#888888 "><i>  337   </i></font></a>    <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 2; i0++) <b>{</b>
+<a name="338"><font color="#888888 "><i>  338   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 4; r1++) <b>{</b>
+<a name="339"><font color="#888888 "><i>  339   </i></font></a>        h_a[i0 + (r1 &lt;&lt; 1)] = 0.0;
+<a name="340"><font color="#888888 "><i>  340   </i></font></a>        <font color="#112266"><b>for</b></font> (r2 = 0; r2 &lt; 4; r2++) <b>{</b>
+<a name="341"><font color="#888888 "><i>  341   </i></font></a>          h_a[i0 + (r1 &lt;&lt; 1)] += (<font color="#112266"><b>double</b></font>)i_a[i0 + (r2 &lt;&lt; 1)] * Pk[r2 + (r1 &lt;&lt; 2)];
+<a name="342"><font color="#888888 "><i>  342   </i></font></a>        <b>}</b>
+<a name="343"><font color="#888888 "><i>  343   </i></font></a>      <b>}</b>
+<a name="344"><font color="#888888 "><i>  344   </i></font></a>
+<a name="345"><font color="#888888 "><i>  345   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 2; r1++) <b>{</b>
+<a name="346"><font color="#888888 "><i>  346   </i></font></a>        c_a[i0 + (r1 &lt;&lt; 1)] = 0.0;
+<a name="347"><font color="#888888 "><i>  347   </i></font></a>        <font color="#112266"><b>for</b></font> (r2 = 0; r2 &lt; 4; r2++) <b>{</b>
+<a name="348"><font color="#888888 "><i>  348   </i></font></a>          c_a[i0 + (r1 &lt;&lt; 1)] += h_a[i0 + (r2 &lt;&lt; 1)] * (<font color="#112266"><b>double</b></font>)c_b[r2 + (r1 &lt;&lt; 2)];
+<a name="349"><font color="#888888 "><i>  349   </i></font></a>        <b>}</b>
+<a name="350"><font color="#888888 "><i>  350   </i></font></a>      <b>}</b>
+<a name="351"><font color="#888888 "><i>  351   </i></font></a>    <b>}</b>
+<a name="352"><font color="#888888 "><i>  352   </i></font></a>
+<a name="353"><font color="#888888 "><i>  353   </i></font></a>    b_Rx[0] = Rx * Rx;
+<a name="354"><font color="#888888 "><i>  354   </i></font></a>    b_Rx[2] = 0.0;
+<a name="355"><font color="#888888 "><i>  355   </i></font></a>    b_Rx[1] = 0.0;
+<a name="356"><font color="#888888 "><i>  356   </i></font></a>    b_Rx[3] = Ry * Ry;
+<a name="357"><font color="#888888 "><i>  357   </i></font></a>    <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 2; i0++) <b>{</b>
+<a name="358"><font color="#888888 "><i>  358   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 2; r1++) <b>{</b>
+<a name="359"><font color="#888888 "><i>  359   </i></font></a>        S[r1 + (i0 &lt;&lt; 1)] = c_a[r1 + (i0 &lt;&lt; 1)] + b_Rx[r1 + (i0 &lt;&lt; 1)];
+<a name="360"><font color="#888888 "><i>  360   </i></font></a>      <b>}</b>
+<a name="361"><font color="#888888 "><i>  361   </i></font></a>    <b>}</b>
+<a name="362"><font color="#888888 "><i>  362   </i></font></a>
+<a name="363"><font color="#888888 "><i>  363   </i></font></a>    <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 4; i0++) <b>{</b>
+<a name="364"><font color="#888888 "><i>  364   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 2; r1++) <b>{</b>
+<a name="365"><font color="#888888 "><i>  365   </i></font></a>        y[i0 + (r1 &lt;&lt; 2)] = 0.0;
+<a name="366"><font color="#888888 "><i>  366   </i></font></a>        <font color="#112266"><b>for</b></font> (r2 = 0; r2 &lt; 4; r2++) <b>{</b>
+<a name="367"><font color="#888888 "><i>  367   </i></font></a>          y[i0 + (r1 &lt;&lt; 2)] += Pk[i0 + (r2 &lt;&lt; 2)] * (<font color="#112266"><b>double</b></font>)c_b[r2 + (r1 &lt;&lt; 2)];
+<a name="368"><font color="#888888 "><i>  368   </i></font></a>        <b>}</b>
+<a name="369"><font color="#888888 "><i>  369   </i></font></a>      <b>}</b>
+<a name="370"><font color="#888888 "><i>  370   </i></font></a>    <b>}</b>
+<a name="371"><font color="#888888 "><i>  371   </i></font></a>
+<a name="372"><font color="#888888 "><i>  372   </i></font></a>    <font color="#112266"><b>if</b></font> (fabs(S[1]) &gt; fabs(S[0])) <b>{</b>
+<a name="373"><font color="#888888 "><i>  373   </i></font></a>      r1 = 1;
+<a name="374"><font color="#888888 "><i>  374   </i></font></a>      r2 = 0;
+<a name="375"><font color="#888888 "><i>  375   </i></font></a>    <b>}</b> <font color="#112266"><b>else</b></font> <b>{</b>
+<a name="376"><font color="#888888 "><i>  376   </i></font></a>      r1 = 0;
+<a name="377"><font color="#888888 "><i>  377   </i></font></a>      r2 = 1;
+<a name="378"><font color="#888888 "><i>  378   </i></font></a>    <b>}</b>
+<a name="379"><font color="#888888 "><i>  379   </i></font></a>
+<a name="380"><font color="#888888 "><i>  380   </i></font></a>    a21 = S[r2] / S[r1];
+<a name="381"><font color="#888888 "><i>  381   </i></font></a>    a22 = S[2 + r2] - a21 * S[2 + r1];
+<a name="382"><font color="#888888 "><i>  382   </i></font></a>    <font color="#112266"><b>for</b></font> (k = 0; k &lt; 4; k++) <b>{</b>
+<a name="383"><font color="#888888 "><i>  383   </i></font></a>      K[k + (r1 &lt;&lt; 2)] = y[k] / S[r1];
+<a name="384"><font color="#888888 "><i>  384   </i></font></a>      K[k + (r2 &lt;&lt; 2)] = (y[4 + k] - K[k + (r1 &lt;&lt; 2)] * S[2 + r1]) / a22;
+<a name="385"><font color="#888888 "><i>  385   </i></font></a>      K[k + (r1 &lt;&lt; 2)] -= K[k + (r2 &lt;&lt; 2)] * a21;
+<a name="386"><font color="#888888 "><i>  386   </i></font></a>    <b>}</b>
+<a name="387"><font color="#888888 "><i>  387   </i></font></a>
+<a name="388"><font color="#888888 "><i>  388   </i></font></a>    <font color="#117755"><i>//  update</i></font>
+<a name="389"><font color="#888888 "><i>  389   </i></font></a>    <font color="#112266"><b>if</b></font> (hasMeasurement != 0) <b>{</b>
+<a name="390"><font color="#888888 "><i>  390   </i></font></a>      c_x_measure[0] = x_measure;
+<a name="391"><font color="#888888 "><i>  391   </i></font></a>      c_x_measure[1] = y_measure;
+<a name="392"><font color="#888888 "><i>  392   </i></font></a>      <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 2; i0++) <b>{</b>
+<a name="393"><font color="#888888 "><i>  393   </i></font></a>        a[i0] = 0.0;
+<a name="394"><font color="#888888 "><i>  394   </i></font></a>        <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 4; r1++) <b>{</b>
+<a name="395"><font color="#888888 "><i>  395   </i></font></a>          a[i0] += (<font color="#112266"><b>double</b></font>)i_a[i0 + (r1 &lt;&lt; 1)] * r[r1];
+<a name="396"><font color="#888888 "><i>  396   </i></font></a>        <b>}</b>
+<a name="397"><font color="#888888 "><i>  397   </i></font></a>
+<a name="398"><font color="#888888 "><i>  398   </i></font></a>        b_x_measure[i0] = c_x_measure[i0] - a[i0];
+<a name="399"><font color="#888888 "><i>  399   </i></font></a>      <b>}</b>
+<a name="400"><font color="#888888 "><i>  400   </i></font></a>
+<a name="401"><font color="#888888 "><i>  401   </i></font></a>      <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 4; i0++) <b>{</b>
+<a name="402"><font color="#888888 "><i>  402   </i></font></a>        a21 = 0.0;
+<a name="403"><font color="#888888 "><i>  403   </i></font></a>        <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 2; r1++) <b>{</b>
+<a name="404"><font color="#888888 "><i>  404   </i></font></a>          a21 += K[i0 + (r1 &lt;&lt; 2)] * b_x_measure[r1];
+<a name="405"><font color="#888888 "><i>  405   </i></font></a>        <b>}</b>
+<a name="406"><font color="#888888 "><i>  406   </i></font></a>
+<a name="407"><font color="#888888 "><i>  407   </i></font></a>        r[i0] += a21;
+<a name="408"><font color="#888888 "><i>  408   </i></font></a>      <b>}</b>
+<a name="409"><font color="#888888 "><i>  409   </i></font></a>    <b>}</b>
+<a name="410"><font color="#888888 "><i>  410   </i></font></a>
+<a name="411"><font color="#888888 "><i>  411   </i></font></a>    <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 4; i0++) <b>{</b>
+<a name="412"><font color="#888888 "><i>  412   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 2; r1++) <b>{</b>
+<a name="413"><font color="#888888 "><i>  413   </i></font></a>        h_a[i0 + (r1 &lt;&lt; 2)] = 0.0;
+<a name="414"><font color="#888888 "><i>  414   </i></font></a>        <font color="#112266"><b>for</b></font> (r2 = 0; r2 &lt; 2; r2++) <b>{</b>
+<a name="415"><font color="#888888 "><i>  415   </i></font></a>          h_a[i0 + (r1 &lt;&lt; 2)] += K[i0 + (r2 &lt;&lt; 2)] * S[r2 + (r1 &lt;&lt; 1)];
+<a name="416"><font color="#888888 "><i>  416   </i></font></a>        <b>}</b>
+<a name="417"><font color="#888888 "><i>  417   </i></font></a>      <b>}</b>
+<a name="418"><font color="#888888 "><i>  418   </i></font></a>
+<a name="419"><font color="#888888 "><i>  419   </i></font></a>      <font color="#112266"><b>for</b></font> (r1 = 0; r1 &lt; 4; r1++) <b>{</b>
+<a name="420"><font color="#888888 "><i>  420   </i></font></a>        a21 = 0.0;
+<a name="421"><font color="#888888 "><i>  421   </i></font></a>        <font color="#112266"><b>for</b></font> (r2 = 0; r2 &lt; 2; r2++) <b>{</b>
+<a name="422"><font color="#888888 "><i>  422   </i></font></a>          a21 += h_a[i0 + (r2 &lt;&lt; 2)] * K[r1 + (r2 &lt;&lt; 2)];
+<a name="423"><font color="#888888 "><i>  423   </i></font></a>        <b>}</b>
+<a name="424"><font color="#888888 "><i>  424   </i></font></a>
+<a name="425"><font color="#888888 "><i>  425   </i></font></a>        Pk[i0 + (r1 &lt;&lt; 2)] -= a21;
+<a name="426"><font color="#888888 "><i>  426   </i></font></a>      <b>}</b>
+<a name="427"><font color="#888888 "><i>  427   </i></font></a>    <b>}</b>
+<a name="428"><font color="#888888 "><i>  428   </i></font></a>  <b>}</b>
+<a name="429"><font color="#888888 "><i>  429   </i></font></a><b>}</b>
+<a name="430"><font color="#888888 "><i>  430   </i></font></a>
+<a name="431"><font color="#888888 "><i>  431   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="432"><font color="#888888 "><i>  432   </i></font></a><font color="#117755"><i>// File trailer for objectTracker.cpp</i></font>
+<a name="433"><font color="#888888 "><i>  433   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="434"><font color="#888888 "><i>  434   </i></font></a><font color="#117755"><i>// [EOF]</i></font>
+<a name="435"><font color="#888888 "><i>  435   </i></font></a><font color="#117755"><i>//</i></font>
+<a name="436"><font color="#888888 "><i>  436   </i></font></a></pre>
+</td></tr></table>
+</p>
+</body>
+</html>

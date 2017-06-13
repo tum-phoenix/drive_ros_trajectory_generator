@@ -1,0 +1,14 @@
+trajectory_generator.cpp:1:#include <lms/math/vertex.h>
+trajectory_generator.cpp:4:#include "lms/math/math.h"
+trajectory_generator.cpp:49:TrajectoryGenerator::TrajectoryGenerator(lms::logging::Logger& _logger) : logger(_logger){
+trajectory_line_creator.cpp:2:#include "lms/math/math.h"
+trajectory_line_creator.cpp:5:#include "lms/math/mathEigen.h"
+trajectory_line_creator.cpp:13:    debug_trajectory = writeChannel<lms::math::polyLine2f>("DEBUG_TRAJECTORY");
+trajectory_line_creator.cpp:50:    const lms::Config* myConfig = &config();
+trajectory_line_creator.cpp:51:    lms::ServiceHandle<phoenix_CC2016_service::Phoenix_CC2016Service> service = getService<phoenix_CC2016_service::Phoenix_CC2016Service>("PHOENIX_SERVICE");
+trajectory_line_creator.cpp:159:    lms::ServiceHandle<phoenix_CC2016_service::Phoenix_CC2016Service> phoenixService = getService<phoenix_CC2016_service::Phoenix_CC2016Service>("PHOENIX_SERVICE");
+trajectory_line_creator.cpp:165:    using lms::math::vertex2f;
+trajectory_line_creator.cpp:171:    for(const lms::math::vertex2f &v:road->points()){
+trajectory_line_creator.cpp:179:    const lms::math::polyLine2f middle = road->getWithDistanceBetweenPoints(obstacleResolution);
+trajectory_line_creator.cpp:242:                tempTrajectory.push_back(street_environment::TrajectoryPoint(lms::math::vertex2f(0,0),normAlong,endVelocity,-0.2)); //TODO
+trajectory_line_creator.cpp:249:                tempTrajectory.push_back(street_environment::TrajectoryPoint(lms::math::vertex2f(0,0),normAlong,endVelocity,0.2)); //TODO
