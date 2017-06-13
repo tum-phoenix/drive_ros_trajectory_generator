@@ -1,4 +1,4 @@
-This is the repo for trajectory\_generation.
+This is test the repo for trajectory\_generation.
 
 Inputs (over ROS):
 *Format: Topic* | *Datatype*
