@@ -34,6 +34,8 @@ private:
 
     geometry_msgs::Pose* trajectory;
     geometry_msgs::Pose* debug_trajectory;
+
+
     //new stuff probably not needed
     /*street_environment::EnvironmentObjects* envObstacles;
     street_environment::RoadStates* roadStates;

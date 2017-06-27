@@ -31,19 +31,35 @@ namespace trajectory_generator {
     }
 
     void TrajectoryLineCreator::costmap_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg) {
-        //TODO set costmap
         // for invoking test callback:
-        // andi@andi-phoenix:~$ rostopic pub -1 /trajectory_line_creator_node/costmap_in
-        // nav_msgs/OccupancyGrid -- '{header: auto, info: {map_load_time: now,
-        // resolution: 1.2, width: 23, height: 23}, data: [6, 8]}'
+        // rostopic pub -1 /trajectory_line_creator_node/costmap_in nav_msgs/OccupancyGrid -- '{header: auto, info: {map_load_time: now, resolution: 1.0, width: 5, height: 3}, data: [100, 100,0,0,100,100, 100,0,0,100,100, 0,0,100,100]}'
+        //just testing
+
+        //TODO calculate the trajectory from costmap
+        // small dummy
+        int min = 255;
+        int x, y;
+        int occupancy;
+        for (int i = 0; i < msg->info.height; ++i) { //rows
+            for (int j = 0; j < msg->info.width; ++j) { //columns
+                occupancy = msg->data[i*msg->info.width + j];
+                if (occupancy <= min && occupancy != -1){
+                    min = occupancy;
+                    x = j;
+                    y = i;
+                }
+            }
+        }
+        //TODO publish trajectory
         geometry_msgs::Pose2D pose;
-        pose.x = msg->info.resolution;
-        pose.theta = 0.2;
+        pose.x = x;
+        pose.y = y;
+        pose.theta = min;
         debugTrajectory_pub_.publish(pose);
     }
 
     /* start of Legacy Code
-    bool TrajectoryLineCreator::cycle() { //TODO where is ros-cycle? publish?
+    bool TrajectoryLineCreator::cycle() {
         //clear old trajectory
         trajectory->clear();
         debug_trajectory->points().clear();
