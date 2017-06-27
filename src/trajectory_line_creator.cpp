@@ -1,52 +1,48 @@
-#include "lms/math/math.h"
-#include "street_environment/obstacle.h"
-#include "street_environment/crossing.h"
-#include "lms/math/mathEigen.h"
-#include "phoenix_CC2016_service/phoenix_CC2016_service.h"
+//#include "lms/math/math.h"
+//#include "street_environment/obstacle.h"
+//#include "street_environment/crossing.h"
+//#include "lms/math/mathEigen.h"
+//#include "phoenix_CC2016_service/phoenix_CC2016_service.h"
 #include <trajectory_generator/trajectory_line_creator.h>
 #include <ros/node_handle.h>
+#include <nav_msgs/OccupancyGrid.h>
+#include <geometry_msgs/Pose2D.h>
+//#include <street_environment/trajectory.h>
 
 namespace trajectory_generator {
 
-    TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle &pnh) :
+    TrajectoryLineCreator::TrajectoryLineCreator(const ros::NodeHandle nh, const ros::NodeHandle pnh) :
             pnh_(pnh),
-            envObstacles_sub_(),
-            roadStates_sub_(),
-            road_sub_(),
-            car_sub_() {
+            costmap_sub_() {
         //advertise to publish topics TODO auch in init()?
-        trajectory_pub_ = pnh_.advertise<street_environment::Trajectory>("LINE", 1); //old name: trajectory
-        debugTrajectory_pub_ = pnh_.advertise<lms::math::polyLine2f>("DEBUG_TRAJECTORY", 1); //old name: debug_trajectory
+        trajectory_pub_ = pnh_.advertise<geometry_msgs::Pose2D>("LINE", 1); //old name: trajectory
+        debugTrajectory_pub_ = pnh_.advertise<geometry_msgs::Pose2D>("DEBUG_TRAJECTORY", 1); //old name: debug_trajectory
 
-        trajectory = new street_environment::Trajectory(); //TODO hier initialisieren?
+        trajectory = new geometry_msgs::Pose(); //TODO hier ::ConstPtr ?
     }
 
     bool TrajectoryLineCreator::init() {
+        //TODO pnh_.getparam()
+
         //subscribe to all needed topics
-        envObstacles_sub_ = pnh_.subscribe("ENVIRONMENT_OBSTACLE", 10, &TrajectoryLineCreator::envobs_callback, this); //old name: envObstacles
-        roadStates_sub_ = pnh_.subscribe("ROAD_STATES", 10, &TrajectoryLineCreator::roadstates_callback, this); //old name: roadStates
-        road_sub_ = pnh_.subscribe("ROAD", 10, &TrajectoryLineCreator::road_callback, this); //old name: road
-        car_sub_ = pnh_.subscribe("CAR", 10, &TrajectoryLineCreator::car_callback, this); //old name: car
+        costmap_sub_ = pnh_.subscribe("costmap_in", 100, &TrajectoryLineCreator::costmap_callback, this);
 
         return true;
     }
 
-    void TrajectoryLineCreator::envobs_callback(const street_environment::EnvironmentObjects &msg) {
-        //TODO set envObstacles
+    void TrajectoryLineCreator::costmap_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg) {
+        //TODO set costmap
+        // for invoking test callback:
+        // andi@andi-phoenix:~$ rostopic pub -1 /trajectory_line_creator_node/costmap_in
+        // nav_msgs/OccupancyGrid -- '{header: auto, info: {map_load_time: now,
+        // resolution: 1.2, width: 23, height: 23}, data: [6, 8]}'
+        geometry_msgs::Pose2D pose;
+        pose.x = msg->info.resolution;
+        pose.theta = 0.2;
+        debugTrajectory_pub_.publish(pose);
     }
 
-    void TrajectoryLineCreator::roadstates_callback(const street_environment::RoadStates &msg) {
-        //TODO set roadStates
-    }
-
-    void TrajectoryLineCreator::road_callback(const street_environment::RoadLane &msg) {
-        //TODO set road
-    }
-
-    void TrajectoryLineCreator::car_callback(const street_environment::CarCommand &msg) {
-        //TODO set car
-    }
-
+    /* start of Legacy Code
     bool TrajectoryLineCreator::cycle() { //TODO where is ros-cycle? publish?
         //clear old trajectory
         trajectory->clear();
@@ -213,7 +209,7 @@ namespace trajectory_generator {
             //check if the trajectory is long enough
             //TODO, get endpoint
             tangLength += along.length();
-            if (tangLength < trajectoryStartDistance /* tangLength > trajectoryMaxLength*/) {//TODO trajectoryMaxLength
+            if (tangLength < trajectoryStartDistance *//* tangLength > trajectoryMaxLength*//*) {//TODO trajectoryMaxLength
                 continue;
             }
             const vertex2f normAlong = along / along.length();
@@ -389,11 +385,11 @@ namespace trajectory_generator {
                         result = LaneState::DANGEROUS;
                     }
                 }
-                /*
+                *//*
                 if(!rightSide && (int)result > 0){
                     ROS_ERROR("states pos: ")<<obstPtr->position().x<<" "<<obstPtr->position().y<<" dist: "<<tangDistanceLane<<" "<<distanceToObstacle;
                 }
-                */
+                *//*
             }
         }
         return result;
@@ -411,6 +407,7 @@ namespace trajectory_generator {
         return o;
 
     }
+*/ // XXX End of Legacy Code
 
 } // end namespace trajectory_generator
 

@@ -20,12 +20,6 @@ catkin_package(
 #add_message_files(
 #        FILES
 # put new *.msg files here
-#        CarCommand.msg
-#        EnvironmentObjects.msg
-#        RoadLane.msg
-#        RoadStates.msg
-#        CarCommandState.msg
-#        RoadState.msg
 #)
 
 include_directories( #TODO delete lms stuff
