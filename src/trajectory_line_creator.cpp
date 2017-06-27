@@ -15,36 +15,58 @@ namespace trajectory_generator {
             road_sub_(),
             car_sub_() {
         //advertise to publish topics TODO auch in init()?
-        line_pub_ = pnh_.advertise<lms::math::polyLine2f>("LINE", 1); //TODO what is polyLine2f?
-        debugTrajectory_pub_ = pnh_.advertise<street_environment::CarCommand>("DEBUG_TRAJECTORY");
+        trajectory_pub_ = pnh_.advertise<street_environment::Trajectory>("LINE", 1); //old name: trajectory
+        debugTrajectory_pub_ = pnh_.advertise<lms::math::polyLine2f>("DEBUG_TRAJECTORY", 1); //old name: debug_trajectory
 
+        trajectory = new street_environment::Trajectory(); //TODO hier initialisieren?
     }
 
     bool TrajectoryLineCreator::init() {
         //subscribe to all needed topics
-        envObstacles_sub_ = pnh_.subscribe("ENVIRONMENT_OBSTACLE", 10, &TrajectoryGenerator::envobs_callback, this);
-        roadStates_sub_ = pnh_.subscribe("ROAD_STATES", 10, &TrajectoryGenerator::roadstates_callback, this);
-        road_sub_ = pnh_.subscribe("ROAD", 10, &TrajectoryGenerator::road_callback, this);
-        car_sub_ = pnh_.subscribe("CAR", 10, &TrajectoryGenerator::car_callback, this);
+        envObstacles_sub_ = pnh_.subscribe("ENVIRONMENT_OBSTACLE", 10, &TrajectoryLineCreator::envobs_callback, this); //old name: envObstacles
+        roadStates_sub_ = pnh_.subscribe("ROAD_STATES", 10, &TrajectoryLineCreator::roadstates_callback, this); //old name: roadStates
+        road_sub_ = pnh_.subscribe("ROAD", 10, &TrajectoryLineCreator::road_callback, this); //old name: road
+        car_sub_ = pnh_.subscribe("CAR", 10, &TrajectoryLineCreator::car_callback, this); //old name: car
 
         return true;
     }
 
-    void TrajectoryGenerator::envobs_callback(const street_environment::EnvironmentObject &msg) {
+    void TrajectoryLineCreator::envobs_callback(const street_environment::EnvironmentObjects &msg) {
+        //TODO set envObstacles
     }
 
-    void TrajectoryGenerator::roadstates_callback(const street_environment::RoadStates &msg) {
+    void TrajectoryLineCreator::roadstates_callback(const street_environment::RoadStates &msg) {
+        //TODO set roadStates
     }
 
-    void TrajectoryGenerator::road_callback(const street_environment::RoadLane &msg) {
+    void TrajectoryLineCreator::road_callback(const street_environment::RoadLane &msg) {
+        //TODO set road
     }
 
-    void TrajectoryGenerator::car_callback(const street_environment::CarCommand &msg) {
+    void TrajectoryLineCreator::car_callback(const street_environment::CarCommand &msg) {
+        //TODO set car
+    }
+
+    bool TrajectoryLineCreator::cycle() { //TODO where is ros-cycle? publish?
+        //clear old trajectory
+        trajectory->clear();
+        debug_trajectory->points().clear();
+
+        //calculate the speed without obstacles
+        float velocity = targetVelocity();
+        //calculate the trajectory
+        *trajectory = simpleTrajectory(true, velocity);
+
+        for (street_environment::TrajectoryPoint &v:*trajectory) {
+            debug_trajectory->points().push_back(v.position);
+        }
+
+        return true;
     }
 
     float TrajectoryLineCreator::targetVelocity() {
         if (roadStates->states.size() != 3) {
-            logger.error("targetVelocity") << "invalid roadstates given, size: " << roadStates->states.size();
+            ROS_ERROR("Error in targetVelocity(): invalid roadstates given, size: %l" , roadStates->states.size()); //TODO richtig angezeigt?
             return 0;
         }
         const float obstacleTrustThreshold = config().get<float>("obstacleTrustThreshold", 0.5);
@@ -67,12 +89,12 @@ namespace trajectory_generator {
         Eigen::Vector3f stateVelocities;
 
         //TODO change to ROS
-        const lms::Config *myConfig = &config();
-        lms::ServiceHandle <phoenix_CC2016_service::Phoenix_CC2016Service> service = getService<phoenix_CC2016_service::Phoenix_CC2016Service>(
+        const lms::Config* myConfig = &config();
+        lms::ServiceHandle <phoenix_CC2016_service::Phoenix_CC2016Service> service = phoenix_CC2016_service::Phoenix_CC2016Service::getService<phoenix_CC2016_service::Phoenix_CC2016Service>(
                 "PHOENIX_SERVICE");
 
         if (!service.isValid()) {
-            logger.error("PHOENIX SERVICE IS INVALID!");
+            ROS_ERROR("PHOENIX SERVICE IS INVALID!");
         } else {
             if (service->driveMode() == phoenix_CC2016_service::CCDriveMode::FMH) {
                 myConfig = &config("FMH");
@@ -83,7 +105,7 @@ namespace trajectory_generator {
             } else if (service->driveMode() == phoenix_CC2016_service::CCDriveMode::IDLE) {
                 //we do nothing
             } else {
-                logger.warn("no drivemode set!") << "using default config";
+                ROS_WARN("no drivemode set! Using default config");
             }
         }
 
@@ -147,23 +169,6 @@ namespace trajectory_generator {
         return velocity;
     }
 
-    bool TrajectoryLineCreator::cycle() {
-        //clear old trajectory
-        trajectory->clear();
-        debug_trajectory->points().clear();
-
-        //calculate the speed without obstacles
-        float velocity = targetVelocity();
-        //calculate the trajectory
-        *trajectory = simpleTrajectory(true, velocity);
-
-        for (street_environment::TrajectoryPoint &v:*trajectory) {
-            debug_trajectory->points().push_back(v.position);
-        }
-
-        return true;
-    }
-
 
     street_environment::Trajectory TrajectoryLineCreator::simpleTrajectory(bool useSavety, float endVelocity) {
         bool useFixedSpeed = false;
@@ -180,13 +185,13 @@ namespace trajectory_generator {
         //TODO change to ROS
         using lms::math::vertex2f;
         if (road->points().size() == 0) {
-            logger.error("cycle") << "no valid environment given";
+            ROS_ERROR("cycle: no valid environment given");
             return tempTrajectory;
         }
         //check if road is valid //TODO change to ROS
         for (const lms::math::vertex2f &v:road->points()) {
             if (std::isnan(v.x) || std::isnan(v.y)) {
-                logger.error("simpleTrajectory") << "Invalid road, element is nan!";
+                ROS_ERROR("simpleTrajectory: Invalid road, element is nan!");
                 return tempTrajectory;
             }
         }
@@ -200,7 +205,7 @@ namespace trajectory_generator {
             const vertex2f p1 = middle.points()[i - 1];
             const vertex2f p2 = middle.points()[i];
             if (p1 == p2) { //should never happen
-                logger.error("simpleTrajectory") << "p1 == p2";
+                ROS_ERROR("simpleTrajectory: p1 == p2");
                 continue;
             }
 
@@ -224,7 +229,7 @@ namespace trajectory_generator {
                 LaneState rightState = LaneState::CLEAR;
                 LaneState leftState = LaneState::CLEAR;
                 if (phoenixService->driveMode() == phoenix_CC2016_service::CCDriveMode::FMH) {
-                    logger.debug("simpleTrajectory") << "driving with obstacles";
+                    ROS_DEBUG("simpleTrajectory: driving with obstacles");
                     rightState = getLaneState(tangLength, true, &reasonObj);
                     leftState = getLaneState(tangLength, false, &reasonObj);
                     //if useSavety, we will avoid the right lane if it's blocked/dangerous
@@ -232,18 +237,18 @@ namespace trajectory_generator {
                         rightSide = false; //if both are blocked, we will stay on the right
                     }
                 } else if (phoenixService->driveMode() == phoenix_CC2016_service::CCDriveMode::FOH) {
-                    logger.debug("simpleTrajectory") << "driving without obstacles";
+                    ROS_DEBUG("simpleTrajectory: driving without obstacles");
                 } else {
-                    logger.debug("simpleTrajectory") << "no valid mode set, using driving without obstacles: "
-                                                     << (int) phoenixService->driveMode();
+                    ROS_DEBUG("simpleTrajectory: no valid mode set, using driving without obstacles: "
+                                                     ,(int) phoenixService->driveMode());
                 }
-                logger.debug("states") << (int) rightState << " " << (int) leftState;
+                ROS_DEBUG("states", (int) rightState, " ", (int) leftState);
                 //check if the road is blocked, if yes, stop
                 if (rightSide && rightState == LaneState::BLOCKED) {
                     if (reasonObj != nullptr && reasonObj->getType() == street_environment::Obstacle::TYPE) { //TODO
-                        logger.info("street is blocked by obstacles!");
+                        ROS_INFO("street is blocked by obstacles!");
                     } else {
-                        logger.info("street is blocked by crossing!");
+                        ROS_INFO("street is blocked by crossing!");
                     }
                     useFixedSpeed = true;
                     fixedSpeed = 0;
@@ -300,14 +305,14 @@ namespace trajectory_generator {
         //check if there is a crossing
         for (street_environment::EnvironmentObjectPtr objPtr: envObstacles->objects) {
             if (objPtr->getType() == street_environment::Crossing::TYPE) {
-                logger.debug("I HAVE A CROSSING") << objPtr->trust();
+                ROS_DEBUG("I HAVE A CROSSING", objPtr->trust());
                 //Check the trust
                 if (objPtr->trust() < crossingTrustThreshold) {
                     continue;
                 }
                 const street_environment::CrossingPtr crossing = std::static_pointer_cast<street_environment::Crossing>(
                         objPtr);
-                logger.debug("CROSSING DATA") << distanceTang(crossing) << " pos: " << crossing->position();
+                ROS_DEBUG("CROSSING DATA", distanceTang(crossing), " pos: ", crossing->position());
                 if (crossing->position().x <
                     config().get<float>("crossingMinDistance", 0.3)) { //we already missed the trajectory!
                     continue;
@@ -315,15 +320,15 @@ namespace trajectory_generator {
                 //TODO doesn't work that good if(crossing->foundOppositeStopLine || !config().get<bool>("crossingUseOppositeLine",false)){
                 if (car->velocity() < 0.1) {//TODO HACK but may work
                     if (const_cast<street_environment::Crossing *>(crossing.get())->startStop()) {//TODO HACK
-                        logger.info("start waiting in front of crossing");
+                        ROS_INFO("start waiting in front of crossing");
                     }
                 }
-                logger.info("simpleTrajectory") << "crossing: stop " << crossing->hasToStop() << " blocked:"
-                                                << crossing->blocked();
+                ROS_INFO("simpleTrajectory", "crossing: stop ", crossing->hasToStop(), " blocked:"
+                                                , crossing->blocked());
                 if (crossing->hasWaited()) {
-                    logger.info("simpleTrajectory") << " waiting for:" << crossing->stopTime().since().toFloat();
+                    ROS_INFO("simpleTrajectory", " waiting for:", crossing->stopTime().since().toFloat());
                 } else {
-                    logger.debug("simpleTrajectory") << " haven't waited on crossing yet";
+                    ROS_DEBUG(("simpleTrajectory"), " haven't waited on crossing yet");
                 }
 
                 //check if we have to stop or if crossing is blocked
@@ -331,12 +336,12 @@ namespace trajectory_generator {
                     //Check if we are waiting for to long
                     if (crossing->hasWaited() &&
                         crossing->stopTime().since().toFloat() > config().get<float>("maxStopTimeAtCrossing", 10)) {
-                        logger.warn("ignoring crossing") << "I was waiting for " << crossing->stopTime().since() << "s";
+                        ROS_WARN("ignoring crossing", "I was waiting for ", crossing->stopTime().since(), "s");
                     } else {
                         //check if the Crossing is close enough
                         //As there won't be an obstacle in front of the crossing we can go on the right
                         //TODO we won't indicate if we change line
-                        logger.debug("tang distance to crossing") << distanceTang(crossing) - tangDistanceLane;
+                        ROS_DEBUG("tang distance to crossing", distanceTang(crossing) - tangDistanceLane);
                         if (distanceTang(crossing) - tangDistanceLane <
                             config().get<float>("minDistanceToCrossing", 0.1)) {
                             result = LaneState::BLOCKED;
@@ -347,7 +352,7 @@ namespace trajectory_generator {
                         }
                     }
                 } else {
-                    logger.info("CROSSING") << "clear, I will go on :)";
+                    ROS_INFO("CROSSING", "clear, I will go on :)");
                 }
             }
         }
@@ -386,7 +391,7 @@ namespace trajectory_generator {
                 }
                 /*
                 if(!rightSide && (int)result > 0){
-                    logger.error("states pos: ")<<obstPtr->position().x<<" "<<obstPtr->position().y<<" dist: "<<tangDistanceLane<<" "<<distanceToObstacle;
+                    ROS_ERROR("states pos: ")<<obstPtr->position().x<<" "<<obstPtr->position().y<<" dist: "<<tangDistanceLane<<" "<<distanceToObstacle;
                 }
                 */
             }

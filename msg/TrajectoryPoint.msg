@@ -1,0 +1,4 @@
+vertex2f position
+vertex2f directory
+float velocity
+float distanceToMiddleLane

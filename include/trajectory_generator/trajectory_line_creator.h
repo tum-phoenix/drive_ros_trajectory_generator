@@ -22,7 +22,7 @@ class TrajectoryLineCreator {
 public:
     TrajectoryLineCreator(ros::NodeHandle& pnh);
     bool init();
-    bool cycle() override;
+    bool cycle(); //TODO override?;
 private:
     //ros stuff
     ros::NodeHandle pnh_;
@@ -30,12 +30,21 @@ private:
     ros::Subscriber roadStates_sub_;
     ros::Subscriber road_sub_;
     ros::Subscriber car_sub_;
-    void envobs_callback(const /*TODO*/& msg)
-    void roadstates_callback(const /*TODO*/& msg)
-    void road_callback(const /*TODO*/& msg)
-    void car_callback(const /*TODO*/& msg)
-    ros::Publisher line_pub_;
+    void envobs_callback(const street_environment::EnvironmentObjects& msg);
+    void roadstates_callback(const street_environment::RoadStates& msg);
+    void road_callback(const street_environment::RoadLane& msg);
+    void car_callback(const street_environment::CarCommand& msg);
+    ros::Publisher trajectory_pub_;
     ros::Publisher debugTrajectory_pub_;
+
+    //new stuff
+    street_environment::EnvironmentObjects* envObstacles;
+    street_environment::RoadStates* roadStates;
+    street_environment::RoadLane* road;
+    street_environment::CarCommand* car;
+    street_environment::Trajectory* trajectory;
+    lms::math::polyLine2f* debug_trajectory;
+
     //old stuff
     street_environment::Trajectory simpleTrajectory(bool useSavety, float endVelocity);
     TrajectoryGenerator* generator;
