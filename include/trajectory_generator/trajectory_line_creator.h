@@ -36,13 +36,15 @@ private:
     geometry_msgs::Pose* debug_trajectory;
 
 
+    //commented out old stuff in case it is needed
+
     //new stuff probably not needed
     /*street_environment::EnvironmentObjects* envObstacles;
     street_environment::RoadStates* roadStates;
     street_environment::RoadLane* road;
     street_environment::CarCommand* car;*/
 
-    /*// XXX old stuff
+    /*//old stuff
     street_environment::Trajectory simpleTrajectory(bool useSavety, float endVelocity);
     TrajectoryGenerator* generator;
 

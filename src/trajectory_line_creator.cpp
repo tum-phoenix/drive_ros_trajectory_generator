@@ -33,10 +33,9 @@ namespace trajectory_generator {
     void TrajectoryLineCreator::costmap_callback(const nav_msgs::OccupancyGrid::ConstPtr &msg) {
         // for invoking test callback:
         // rostopic pub -1 /trajectory_line_creator_node/costmap_in nav_msgs/OccupancyGrid -- '{header: auto, info: {map_load_time: now, resolution: 1.0, width: 5, height: 3}, data: [100, 100,0,0,100,100, 100,0,0,100,100, 0,0,100,100]}'
-        //just testing
 
         //TODO calculate the trajectory from costmap
-        // small dummy
+        // small dummy to test node publish
         int min = 255;
         int x, y;
         int occupancy;
@@ -58,7 +57,8 @@ namespace trajectory_generator {
         debugTrajectory_pub_.publish(pose);
     }
 
-    /* start of Legacy Code
+    /* start of Legacy Code, commented out to maybe reuse some algorithms
+
     bool TrajectoryLineCreator::cycle() {
         //clear old trajectory
         trajectory->clear();
