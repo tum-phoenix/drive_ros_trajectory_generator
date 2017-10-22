@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ros::NodeHandle pnh("~");
 
-    trajectory_generator::TrajectoryLineCreator line_creator = trajectory_generator::TrajectoryLineCreator(nh, pnh);
+    trajectory_generator::TrajectoryLineCreator line_creator(nh, pnh);
     if (!line_creator.init()) {
         return 1;
     } else {

@@ -1,0 +1,20 @@
+maxStopTimeAtCrossing: 30
+velocity_straight: 3.5
+curve_maxVelocity: 2.8
+curve_minVelocity: 2.5
+curveStraight_maxVelocity: 3.2
+curveStraight_minVelocity: 3.0
+aOrthMax: 3.5
+simpleTraj: true
+angleD: 0.35
+obstacleResolution: 0.05
+minDistanceBetweenTrajectoryPoints: 0.2
+distanceObstacleBeforeChangeLine: 1
+obstacleLength: 0.4
+
+obstacleTrustThreshold=0.3
+startLineTrustThreshold=0.3
+crossingTrustThreshold=0.5
+#number that will be substracted if the obstacle wasn't found
+trustReducer=0.05
+crossingUseOppositeLine = false

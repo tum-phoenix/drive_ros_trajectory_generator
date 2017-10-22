@@ -9,18 +9,18 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
         roscpp
         std_msgs
-        message_generation
+        drive_ros_msgs
+        dynamic_reconfigure
         )
+
+generate_dynamic_reconfigure_options(
+    cfg/TrajectoryLineCreation.cfg
+    )
 
 catkin_package(
         INCLUDE_DIRS include
-        CATKIN_DEPENDS roscpp std_msgs
+        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure
 )
-
-#add_message_files(
-#        FILES
-# put new *.msg files here
-#)
 
 include_directories( #TODO delete lms stuff
         include
@@ -36,13 +36,6 @@ include_directories( #TODO delete lms stuff
         ${catkin_INCLUDE_DIRS}
 )
 
-## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#        DEPENDENCIES
-#        std_msgs  # Or other packages containing msgs
-#        trajectory_generator
-#)
-
 ################################################################################
 # Trajectory Line Creator Node
 ################################################################################
@@ -51,7 +44,8 @@ add_executable(trajectory_line_creator_node
         src/trajectory_line_creator_node.cpp
         )
 
-add_dependencies(trajectory_line_creator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(trajectory_line_creator_node ${drive_ros_msgs_generate_messages_cpp}
+    ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(trajectory_line_creator_node
         ${catkin_LIBRARIES}

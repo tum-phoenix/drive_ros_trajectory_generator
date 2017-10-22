@@ -1,0 +1,19 @@
+velocity_straight: 5.0
+curve_maxVelocity: 4.2
+curve_minVelocity: 3.4
+curveStraight_maxVelocity: 4.5
+curveStraight_minVelocity: 3.3
+aOrthMax: 3.5
+simpleTraj: true
+angleD: 0.35
+obstacleResolution: 0.05
+minDistanceBetweenTrajectoryPoints: 0.2
+distanceObstacleBeforeChangeLine: 1
+obstacleLength: 0.7
+
+obstacleTrustThreshold=0.3
+startLineTrustThreshold=0.3
+crossingTrustThreshold=0.5
+#number that will be substracted if the obstacle wasn't found
+trustReducer=0.05
+crossingUseOppositeLine = false

@@ -1,5 +1,5 @@
-#ifndef IMAGE_HINT_TRANSFORMER_H
-#define IMAGE_HINT_TRANSFORMER_H
+#ifndef TRAJECTORY_LINE_CREATOR_H
+#define TRAJECTORY_LINE_CREATOR_H
 
 //#include "lms/module.h"
 //#include "lms/math/polyline.h"
@@ -9,8 +9,11 @@
 //#include "street_environment/trajectory.h"
 //#include "street_environment/obstacle.h"
 #include <ros/ros.h>
-#include <nav_msgs/OccupancyGrid.h>
-#include "trajectory_generator/trajectory_line_creator.h"
+#include <drive_ros_msgs/RoadLane.h>
+#include <dynamic_reconfigure/server.h>
+#include <trajectory_generator/TrajectoryLineCreationConfig.h>
+//#include <trajectory_generator/
+//#include "trajectory_generator/trajectory_line_creator.h"
 
 enum class LaneState{
     CLEAR,DANGEROUS,BLOCKED
@@ -21,20 +24,23 @@ namespace trajectory_generator{
 class TrajectoryLineCreator {
 
 public:
-    TrajectoryLineCreator(const ros::NodeHandle nh, const ros::NodeHandle pnh);
+    TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle pnh);
     bool init();
 private:
-    //ros stuff
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
-    ros::Subscriber costmap_sub_;
-    void costmap_callback(const nav_msgs::OccupancyGrid::ConstPtr& msg);
+    ros::Subscriber visual_detection_sub_;
+    void visual_detection_callback(const drive_ros_msgs::RoadLaneConstPtr& road_in);
     ros::Publisher trajectory_pub_;
     ros::Publisher debugTrajectory_pub_;
 
-    geometry_msgs::Pose* trajectory;
-    geometry_msgs::Pose* debug_trajectory;
+    void reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
+    dynamic_reconfigure::Server<trajectory_generator::TrajectoryLineCreationConfig> reconfigure_server_;
+    trajectory_generator::TrajectoryLineCreationConfig initial_config_;
+    trajectory_generator::TrajectoryLineCreationConfig config_;
+    bool initial_received_;
 
+    double obstacleTrustThreshold_;
 
     //commented out old stuff in case it is needed
 
@@ -83,4 +89,4 @@ private:
 
 } // namespace trajectory_generator
 
-#endif /* IMAGE_HINT_TRANSFORMER_H */
+#endif // TRAJECTORY_LINE_CREATOR_H
