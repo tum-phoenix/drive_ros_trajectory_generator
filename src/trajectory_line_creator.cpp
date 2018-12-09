@@ -93,8 +93,10 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 	driveCmdMsg.phi_f = - steeringAngleFront;
 	driveCmdMsg.phi_r = - steeringAngleRear;
 
-	canPub.publish(driveCmdMsg);
-	ROS_INFO("Published uavcan message");
+	if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
+		canPub.publish(driveCmdMsg);
+		ROS_INFO("Published uavcan message");
+	}
 }
 
 void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {
