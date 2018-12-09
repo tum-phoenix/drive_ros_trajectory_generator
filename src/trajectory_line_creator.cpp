@@ -1,4 +1,5 @@
 #include "trajectory_generator/trajectory_line_creator.h"
+#include "drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h"
 
 namespace trajectory_generator {
 
@@ -16,6 +17,9 @@ TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle
 bool TrajectoryLineCreator::init() {
 	drivingLineSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
 	ROS_INFO("Subscribing on topic '%s'", drivingLineSub.getTopic().c_str());
+
+	canPub = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
+	ROS_INFO("Publish uav_can messages on topic '%s'", canPub.getTopic().c_str());
 
 	return true;
 }
@@ -85,6 +89,12 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 	ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
 	ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
 
+	drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
+	driveCmdMsg.phi_f = - steeringAngleFront;
+	driveCmdMsg.phi_r = - steeringAngleRear;
+
+	canPub.publish(driveCmdMsg);
+	ROS_INFO("Published uavcan message");
 }
 
 void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {

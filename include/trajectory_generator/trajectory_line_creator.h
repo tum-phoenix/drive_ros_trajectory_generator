@@ -19,6 +19,7 @@ private:
     ros::NodeHandle pnh_;
 
     ros::Subscriber drivingLineSub;
+    ros::Publisher canPub;
 
     float currentVelocity; // TODO
     float minForwardDist = 1.0f; // TODO
