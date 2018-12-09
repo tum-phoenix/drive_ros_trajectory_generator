@@ -41,7 +41,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 	// get y from polynom
 	float forwardDistanceY = 0.f;
 
-	for(int i = 0; i <= msg->polynom_order; i++) {
+	for(int i = 0; i < msg->polynom_order; i++) {
 		float tmp = msg->polynom_params.at(i);
 		for(int j = 0; j < i; j++) {
 			tmp *= forwardDistanceX;
@@ -65,7 +65,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 	// ===========================
 
 	float phiAtGoalX = 0.f; // deviate the polynom
-	for(int i = 1; i <= msg->polynom_order; i++) {
+	for(int i = 1; i < msg->polynom_order; i++) {
 		float tmp = msg->polynom_params.at(i) * i;
 		for(int j = 1; j < i; j++) {
 			tmp *= forwardDistanceX;
