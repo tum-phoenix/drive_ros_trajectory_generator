@@ -22,17 +22,8 @@ catkin_package(
         CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure
 )
 
-include_directories( #TODO delete lms stuff
+include_directories(
         include
-        include/trajectory_generator
-        external/services/phoenix_CC2016_service/include
-        external/libraries/math_lib/include
-        external/libraries/street_environment/include
-        external/libraries/lms/include
-        external/libraries/conan_cereal/include
-        external/libraries/cereal/
-        external/libraries/OLDtrajectory_creator/include
-        external/libraries
         ${catkin_INCLUDE_DIRS}
 )
 

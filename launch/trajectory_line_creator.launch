@@ -1,7 +1,7 @@
 <launch>
-    <arg name="visual_detection_topic" default="/line_out"/>
+    <arg name="driving_line_topic" default="/driving_line"/>
 
     <node name="trajectory_line_creator_node" pkg="trajectory_generator" type="trajectory_line_creator_node" respawn="false" output="screen">
-        <remap from="line_in" default="$(arg visual_detection_topic)"/>
+        <remap from="line_in" to="$(arg driving_line_topic)"/>
     </node>
 </launch>
