@@ -25,14 +25,11 @@ bool TrajectoryLineCreator::init() {
 }
 
 void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg) {
-//	uint8 polynom_order
-//	float32[] polynom_params
-
-
 	// ===========================
 	// 			velocity
 	// ===========================
-	ROS_INFO("detectionRange = %.2f", msg->detectionRange);
+	ROS_INFO("---");
+	ROS_INFO("detection range = %.2f", msg->detectionRange);
 
 	// calculate forward velocity
 	float forwardDistanceX = minForwardDist + std::abs(currentVelocity) * k1;
@@ -41,7 +38,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 	// get y from polynom
 	float forwardDistanceY = 0.f;
 
-	for(int i = 0; i < msg->polynom_order; i++) {
+	for(int i = 0; i <= msg->polynom_order; i++) {
 		float tmp = msg->polynom_params.at(i);
 		for(int j = 0; j < i; j++) {
 			tmp *= forwardDistanceX;
@@ -65,7 +62,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 	// ===========================
 
 	float phiAtGoalX = 0.f; // deviate the polynom
-	for(int i = 1; i < msg->polynom_order; i++) {
+	for(int i = 1; i <= msg->polynom_order; i++) {
 		float tmp = msg->polynom_params.at(i) * i;
 		for(int j = 1; j < i; j++) {
 			tmp *= forwardDistanceX;
@@ -73,7 +70,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 		phiAtGoalX += tmp;
 	}
 
-	ROS_INFO("polynom(x)  = %.2f", forwardDistanceX);
+	ROS_INFO("polynom(x)  = %.2f", forwardDistanceY);
 	ROS_INFO("polynom'(x) = %.2f", phiAtGoalX);
 
 	// radius is also turnRadiusY
@@ -103,7 +100,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 }
 
 void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {
-
+	minForwardDist = config.min_forward_dist;
+	currentVelocity = config.current_velocity;
 }
 
 } // end namespace trajectory_generator

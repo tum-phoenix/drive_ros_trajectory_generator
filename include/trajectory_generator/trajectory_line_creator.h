@@ -26,7 +26,7 @@ private:
     float k1 = 1.f / 6.f; // TODO
     float vMax = 2.0f;
     float vMin = 0.1f;
-    float axisDistance = 0.222f; // TODO
+    float axisDistance = 0.222f;
 
     void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg);
 

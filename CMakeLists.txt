@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 generate_dynamic_reconfigure_options(
     cfg/TrajectoryLineCreation.cfg
-    )
+)
 
 catkin_package(
         INCLUDE_DIRS include
