@@ -1,5 +1,5 @@
 #include "trajectory_generator/trajectory_line_creator.h"
-#include "drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h"
+#include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
 
 namespace trajectory_generator {
 
@@ -36,7 +36,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 
 	// calculate forward velocity
 	float forwardDistanceX = minForwardDist + std::abs(currentVelocity) * k1;
-	forwardDistanceX = std::min(forwardDistanceX, msg->detectionRange); // limit to detectionRange
+    forwardDistanceX =  0.5; //std::min(forwardDistanceX, msg->detectionRange); // limit to detectionRange
 
 	// get y from polynom
 	float forwardDistanceY = 0.f;
@@ -49,14 +49,14 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 		forwardDistanceY += tmp;
 	}
 
-	float kappa = std::abs(std::atan2(forwardDistanceY, forwardDistanceX));
+    float kappa = (std::atan2(forwardDistanceY, forwardDistanceX));
 
 	ROS_INFO("Goal point (%.2f, %.2f)", forwardDistanceX, forwardDistanceY);
 	ROS_INFO("Kappa = %.5f", kappa);
 
 	// TODO: querbeschleunigung
 
-	float vGoal = vMax - kappa * (vMax - vMin);
+    float vGoal = vMax - std::abs(kappa) * (vMax - vMin);
 
 	ROS_INFO("vGoal = %f", vGoal);
 
@@ -86,17 +86,20 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 	float steeringAngleRear  = - std::atan(turnRadiusX                  / (radius + (0.001f*(radius == 0.f))));
 	float steeringAngleFront = - std::atan((turnRadiusX - axisDistance) / (radius + (0.001f*(radius == 0.f))));
 
-	ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
-	ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
+    //ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
+    //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
 
 	drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
-	driveCmdMsg.phi_f = - steeringAngleFront;
-	driveCmdMsg.phi_r = - steeringAngleRear;
+    driveCmdMsg.phi_f = -kappa*0.65;
+    driveCmdMsg.phi_r = 0.0f;
 
-	if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
+    //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
+        ROS_INFO("Steering front = %.1f[deg]", driveCmdMsg.phi_f * 180.f / M_PI);
+        ROS_INFO("Steering rear  = %.1f[deg]", driveCmdMsg.phi_r * 180.f / M_PI);
+
 		canPub.publish(driveCmdMsg);
 		ROS_INFO("Published uavcan message");
-	}
+    //}
 }
 
 void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {

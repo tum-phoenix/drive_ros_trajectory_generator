@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
         std_msgs
         drive_ros_msgs
         dynamic_reconfigure
+        drive_ros_uavcan
         )
 
 generate_dynamic_reconfigure_options(
@@ -19,7 +20,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
         INCLUDE_DIRS include
-        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure
+        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure drive_ros_uavcan
 )
 
 include_directories(
