@@ -33,17 +33,17 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 
 	// calculate forward velocity
 	float forwardDistanceX = minForwardDist + std::abs(currentVelocity) * k1;
-    forwardDistanceX =  0.5; //std::min(forwardDistanceX, msg->detectionRange); // limit to detectionRange
+    forwardDistanceX =  1.0; //std::min(forwardDistanceX, msg->detectionRange); // limit to detectionRange
 
 	// get y from polynom
 	float forwardDistanceY = 0.f;
 
 	for(int i = 0; i <= msg->polynom_order; i++) {
 		float tmp = msg->polynom_params.at(i);
-		for(int j = 0; j < i; j++) {
-			tmp *= forwardDistanceX;
-		}
-		forwardDistanceY += tmp;
+//		for(int j = 0; j < i; j++) {
+//			tmp *= forwardDistanceX;
+//		}
+        forwardDistanceY += tmp*std::pow(forwardDistanceX, i);
 	}
 
     float kappa = (std::atan2(forwardDistanceY, forwardDistanceX));
@@ -87,7 +87,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
 
 	drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
-    driveCmdMsg.phi_f = -kappa*0.65;
+    driveCmdMsg.phi_f = kappa*1.0;
     driveCmdMsg.phi_r = 0.0f;
 
     //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
