@@ -1,5 +1,6 @@
 #include "trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
+#include <trajectory_generator/polygon_msg_operations.h>
 
 namespace trajectory_generator {
 
@@ -77,16 +78,11 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     break;
   }
 
-  for(int i = 0; i <= msg->polynom_order; i++) {
-    forwardDistanceY += msg->polynom_params.at(i)*std::pow(forwardDistanceX, i);
-  }
+  forwardDistanceY = compute_polynomial_at_location(msg, forwardDistanceX);
 
   // compute derivative on carrot point to get normal if we need to offset ortogonally (lane change)
   if (laneChangeDistance != 0.f) {
-    float derivative = 0.f;
-    for(int i = 0; i <= msg->polynom_order-1; i++) {
-      derivative += msg->polynom_params.at(i+1)*(i+1)*std::pow(forwardDistanceX, i);
-    }
+    float derivative = derive_polynomial_at_location(msg, forwardDistanceX);
 
     // compute normal vector
     float vec_x = -derivative;
