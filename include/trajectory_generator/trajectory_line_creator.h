@@ -7,6 +7,8 @@
 #include "drive_ros_msgs/DrivingLine.h"
 #include "trajectory_generator/TrajectoryLineCreationConfig.h"
 
+#include <drive_ros_msgs/TrajectoryMetaInput.h>
+
 namespace trajectory_generator{
 
 class TrajectoryLineCreator {
@@ -19,6 +21,7 @@ private:
     ros::NodeHandle pnh_;
 
     ros::Subscriber drivingLineSub;
+    ros::Subscriber trajectory_meta_sub_;
     ros::Publisher canPub;
 
     float currentVelocity; // TODO
@@ -27,8 +30,16 @@ private:
     float vMax = 2.0f;
     float vMin = 0.1f;
     float axisDistance = 0.222f;
+    // hardcoded for debugging purposes
+    float hardcodedForwardDistance = 1.f;
+
+    //  for commands from BT
+    float laneWidth = 0.4f;
+    float crossingTurnAngle = 0.4f;
+    short int drivingCommand = drive_ros_msgs::TrajectoryMetaInput::STANDARD;
 
     void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg);
+    void metaInputCB(const drive_ros_msgs::TrajectoryMetaInputConstPtr &msg);
 
     // Dynamic reconfigure
     void reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
