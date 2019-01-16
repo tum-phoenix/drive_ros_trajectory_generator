@@ -4,6 +4,8 @@ project(trajectory_generator)
 #SET(CMAKE_BUILD_TYPE Release)
 SET(CMAKE_BUILD_TYPE Debug)
 
+# enable to get visual display of the obstacle
+option(SUBSCRIBE_DEBUG "Add debug output" ON)
 add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -14,13 +16,18 @@ find_package(catkin REQUIRED COMPONENTS
         drive_ros_uavcan
         )
 
+if (SUBSCRIBE_DEBUG)
+    find_package(OpenCV REQUIRED)
+    include_directories(${OpenCV_INCLUDE_DIRS})
+endif(SUBSCRIBE_DEBUG)
+
 generate_dynamic_reconfigure_options(
     cfg/TrajectoryLineCreation.cfg
 )
 
 catkin_package(
         INCLUDE_DIRS include
-        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure drive_ros_uavcan
+        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure drive_ros_uavcan cv_bridge sensor_msgs image_transport drive_ros_image_recognition
 )
 
 include_directories(
@@ -42,6 +49,12 @@ add_dependencies(trajectory_line_creator_node ${drive_ros_msgs_generate_messages
 target_link_libraries(trajectory_line_creator_node
         ${catkin_LIBRARIES}
         )
+
+if (SUBSCRIBE_DEBUG)
+    target_link_libraries(trajectory_line_creator_node
+            ${OpenCV_LIBS}
+            )
+endif(SUBSCRIBE_DEBUG)
 
 install(TARGETS trajectory_line_creator_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

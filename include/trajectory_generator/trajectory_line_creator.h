@@ -8,6 +8,11 @@
 #include "trajectory_generator/TrajectoryLineCreationConfig.h"
 
 #include <drive_ros_msgs/TrajectoryMetaInput.h>
+#ifdef SUBSCRIBE_DEBUG
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <drive_ros_image_recognition/common_image_operations.h>
+#endif
 
 namespace trajectory_generator{
 
@@ -30,6 +35,7 @@ private:
     float vMax = 2.0f;
     float vMin = 0.1f;
     float axisDistance = 0.222f;
+    float understeerFactor = 0.65f;
     // hardcoded for debugging purposes
     float hardcodedForwardDistance = 1.f;
 
@@ -40,6 +46,16 @@ private:
 
     void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg);
     void metaInputCB(const drive_ros_msgs::TrajectoryMetaInputConstPtr &msg);
+#ifdef SUBSCRIBE_DEBUG
+    image_transport::ImageTransport it_;
+    image_transport::Subscriber debug_image_sub_;
+    image_transport::Publisher debug_image_pub_;
+    void debugImgCallback(const sensor_msgs::ImageConstPtr& msg);
+    cv::Mat debug_img_;
+    ImageOperator image_operator_;
+#endif
+
+    std::string stream_name_ = "TRAJECTORY_GENERATOR";
 
     // Dynamic reconfigure
     void reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
