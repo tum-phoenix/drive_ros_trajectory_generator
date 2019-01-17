@@ -1,9 +1,11 @@
 <launch>
     <arg name="driving_line_topic" default="/driving_line"/>
     <arg name="uavcan_topic" default="/canros/msg/phoenix_msgs/NucDriveCommand"/>
+    <arg name="trajectory_meta_input_topic" default="/trajectory_meta_input"/>
 
     <node name="trajectory_line_creator_node" pkg="trajectory_generator" type="trajectory_line_creator_node" respawn="false" output="screen">
         <remap from="line_in" to="$(arg driving_line_topic)"/>
         <remap from="can_topic" to="$(arg uavcan_topic)"/>
+        <remap from="meta_in" to="$(arg trajectory_meta_input_topic)"/>
     </node>
 </launch>
