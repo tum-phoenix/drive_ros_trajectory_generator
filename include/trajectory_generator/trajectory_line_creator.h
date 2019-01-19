@@ -5,7 +5,7 @@
 #include <dynamic_reconfigure/server.h>
 
 #include "drive_ros_msgs/DrivingLine.h"
-#include "trajectory_generator/TrajectoryLineCreationConfig.h"
+#include "drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h"
 
 #include <drive_ros_msgs/TrajectoryMetaInput.h>
 #ifdef SUBSCRIBE_DEBUG

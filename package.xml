@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>trajectory_generator</name>
+  <name>drive_ros_trajectory_generator</name>
   <version>0.0.1</version>
   <description>The trajectory_generator package</description>
 
