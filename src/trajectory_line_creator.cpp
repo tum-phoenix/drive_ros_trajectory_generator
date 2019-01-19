@@ -175,7 +175,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
 
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
-  driveCmdMsg.phi_f = kappa*understeerFactor;
+  driveCmdMsg.phi_f = -kappa*understeerFactor;
   driveCmdMsg.phi_r = 0.0f;
   driveCmdMsg.lin_vel = vGoal;
 
