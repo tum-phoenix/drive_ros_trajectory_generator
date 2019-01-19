@@ -14,11 +14,15 @@ find_package(catkin REQUIRED COMPONENTS
         drive_ros_msgs
         dynamic_reconfigure
         drive_ros_uavcan
+        drive_ros_image_recognition
+        image_transport
+        sensor_msgs
+        cv_bridge
         )
 
 if (SUBSCRIBE_DEBUG)
+    add_definitions(-DSUBSCRIBE_DEBUG)
     find_package(OpenCV REQUIRED)
-    include_directories(${OpenCV_INCLUDE_DIRS})
 endif(SUBSCRIBE_DEBUG)
 
 generate_dynamic_reconfigure_options(
@@ -34,6 +38,10 @@ include_directories(
         include
         ${catkin_INCLUDE_DIRS}
 )
+
+if (SUBSCRIBE_DEBUG)
+    include_directories(${OpenCV_INCLUDE_DIRS})
+endif(SUBSCRIBE_DEBUG)
 
 ################################################################################
 # Trajectory Line Creator Node

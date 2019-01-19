@@ -11,8 +11,8 @@
 #ifdef SUBSCRIBE_DEBUG
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
-#include <drive_ros_image_recognition/common_image_operations.h>
 #endif
+#include <drive_ros_image_recognition/common_image_operations.h>
 
 namespace trajectory_generator{
 
@@ -52,7 +52,7 @@ private:
     image_transport::Publisher debug_image_pub_;
     void debugImgCallback(const sensor_msgs::ImageConstPtr& msg);
     cv::Mat debug_img_;
-    ImageOperator image_operator_;
+    drive_ros_image_recognition::ImageOperator image_operator_;
 #endif
 
     std::string stream_name_ = "TRAJECTORY_GENERATOR";

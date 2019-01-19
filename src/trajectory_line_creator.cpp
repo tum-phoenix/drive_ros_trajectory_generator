@@ -16,33 +16,33 @@ TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle
 	: pnh_(pnh)
 	, reconfigure_server_()
 #ifdef SUBSCRIBE_DEBUG
-  , it_(pnh)
+  , it_(nh)
   , image_operator_()
 #endif
 {
-	reconfigure_server_.setCallback(boost::bind(&TrajectoryLineCreator::reconfigureCB, this, _1, _2));
-  trajectory_meta_sub_ = pnh_.subscribe("meta_in", 10, &TrajectoryLineCreator::metaInputCB, this);
+  reconfigure_server_.setCallback(boost::bind(&TrajectoryLineCreator::reconfigureCB, this, _1, _2));
+  trajectory_meta_sub_ = nh_.subscribe("meta_in", 10, &TrajectoryLineCreator::metaInputCB, this);
 }
 
 bool TrajectoryLineCreator::init() {
-	drivingLineSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
+  drivingLineSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Subscribing on topic '%s'", drivingLineSub.getTopic().c_str());
 
-	canPub = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
+  canPub = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Publish uav_can messages on topic '%s'",
                  canPub.getTopic().c_str());
 
 #ifdef SUBSCRIBE_DEBUG
   // common image operations, in this case transformations
   if(!image_operator_.init()) {
-      ROS_WARN_STREAM_NAMED(stream_name, "[Trajectory Generator] Failed to init image_operator");
+      ROS_WARN_STREAM_NAMED(stream_name_, "[Trajectory Generator] Failed to init image_operator");
       return false;
   }
   debug_image_sub_ = it_.subscribe("debug_image_in", 1, &TrajectoryLineCreator::debugImgCallback, this);
   debug_image_pub_ = it_.advertise("debug_image_out", 1);
 #endif
 
-	return true;
+    return true;
 }
 
 #ifdef SUBSCRIBE_DEBUG
@@ -97,16 +97,16 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_RIGHT):
       // shift lane distance to the right
-      laneChangeDistance = laneWidth;
+      laneChangeDistance = -laneWidth;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
       // hard-code steering angle to the left
-      presetSteeringAngle = steeringAngleFixed;
+      presetSteeringAngle = crossingTurnAngle;
       steeringAngleFixed = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_RIGHT):
       // hard code steering angle to the right
-      presetSteeringAngle = -steeringAngleFixed;
+      presetSteeringAngle = -crossingTurnAngle;
       steeringAngleFixed = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::STRAIGHT_FORWARD):
@@ -126,8 +126,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     float vec_x = -derivative;
     float vec_y = 1.f;
     float normed_distance = std::sqrt(std::pow(derivative, 2) + std::pow(1.f, 2));
-    forwardDistanceX = forwardDistanceX+vec_x*(laneWidth/normed_distance);
-    forwardDistanceY = forwardDistanceY+vec_y*(laneWidth/normed_distance);
+    forwardDistanceX = forwardDistanceX+vec_x*(laneChangeDistance/normed_distance);
+    forwardDistanceY = forwardDistanceY+vec_y*(laneChangeDistance/normed_distance);
   }
 
   float kappa;
@@ -187,21 +187,25 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   ROS_INFO_NAMED(stream_name_, "Published uavcan message");
 
 #ifdef SUBSCRIBE_DEBUG
-  // draw carrot steering point
-  std::vector<cv::Point2f> world_point_vec{cv::Point2f(forwardDistanceX, forwardDistanceY)};
-  std::vector<cv::Point2f> image_point_vec;
-  image_operator_.worldToWarpedImg(world_point_vec, image_point_vec);
-  cv::drawMarker(debug_img_, image_point_vec[0], cv::Scalar(0, 255, 0), cv::MARKER_CROSS);
-  // draw steering angle
-  // baseline point around the center of the front axis, and angle point in front of it
-  world_point_vec.clear();
-  image_point_vec.clear();
-  float forward_draw_distance = 0.1f;
-  world_point_vec.push_back(cv::Point2f(0.1f, 0.f));
-  world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance, std::tan(kappa)*forward_draw_distance);
-  image_operator_.worldToWarpedImg(world_point_vec, image_point_vec);
-  cv::arrowedLine(debug_img_, image_point_vec[0], image_point_vec[1], cv::Scalar(0, 255, 0), 2);
-  debug_image_pub_.publish(debug_img_);
+  if (!debug_img_.empty()) {
+      ROS_INFO_STREAM("Drawing debug image");
+      // draw carrot steering point
+      std::vector<cv::Point2f> world_point_vec{cv::Point2f(forwardDistanceX, forwardDistanceY)};
+      std::vector<cv::Point2f> image_point_vec;
+      image_operator_.worldToWarpedImg(world_point_vec, image_point_vec);
+      cv::drawMarker(debug_img_, image_point_vec[0], cv::Scalar(0, 0, 255), cv::MARKER_CROSS);
+      // draw steering angle
+      // baseline point around the center of the front axis, and angle point in front of it
+      world_point_vec.clear();
+      image_point_vec.clear();
+      float forward_draw_distance = 0.1f;
+      world_point_vec.push_back(cv::Point2f(0.1f, 0.f));
+      world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance, std::tan(kappa)*forward_draw_distance));
+      image_operator_.worldToWarpedImg(world_point_vec, image_point_vec);
+      cv::arrowedLine(debug_img_, image_point_vec[0], image_point_vec[1], cv::Scalar(0, 0, 255), 2);
+      sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg();
+      debug_image_pub_.publish(msg);
+  }
 #endif
   //}
 }
