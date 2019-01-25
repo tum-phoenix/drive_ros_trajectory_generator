@@ -1,7 +1,7 @@
 <launch>
     <arg name="driving_line_topic" default="/driving_line"/>
     <arg name="uavcan_topic" default="/canros/msg/phoenix_msgs/NucDriveCommand"/>
-    <arg name="trajectory_meta_input_topic" default="/trajectory_meta_input"/>
+    <arg name="trajectory_meta_input_topic" default="/trajectory_meta_commands"/>
     <arg name="vision_debug" default="true"/>
 
     <arg name="camera" default="camera"/>
