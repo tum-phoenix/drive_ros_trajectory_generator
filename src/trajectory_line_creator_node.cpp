@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <trajectory_generator/trajectory_line_creator.h>
+#include <drive_ros_trajectory_generator/trajectory_line_creator.h>
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "trajectory_line_creator_node");
