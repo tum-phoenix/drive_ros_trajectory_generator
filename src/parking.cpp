@@ -1,6 +1,9 @@
 #include <drive_ros_trajectory_generator/parking.h>
+#include <drive_ros_environment_model/sign_string_to_id.h>
 
-Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh)
+Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh) :
+  driving_line_sub_(nh, "driving_line_in", 1),
+  laser_sub_(nh, "laserscan_in", 1)
 {
   pnh_ = pnh;
   nh_ = nh;
@@ -23,8 +26,7 @@ Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh)
 
   parking_spot_sub_ = nh_.subscribe("parking_spot_in", 2, &Parking::parkingSpotCB, this);
   drive_command_pub_ = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
-  laser_sub_ = nh_.subscribe("laserscan_in", 2, &Parking::laserScanCB, this);
-  env_model_sub_ = nh_.subscribe("environment_in", 2, &Parking::environmentModelCB, this);
+  sync_.registerCallback(boost::bind(&Parking::syncCallback, this, _1, _2));
 
   currentXPosition = 0;
   lastTimeStamp = -1;
@@ -33,18 +35,44 @@ Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh)
   move_straight_start_pos = 0;
   finished_pos = 0;
   oldDeltaPhi = 0;
+  distanceToObstacleFront = 0;
 }
 
-void environmentModelCB(const drive_ros_msgs::EnvironmentModelConstPtr &env_in)
+void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
+                             const sensor_msgs::LaserScanConstPtr &scan)
 {
-  // check for stop signs
-  for (const drive_ros_msgs::TrafficMarkEnvironment &mark : env_in->traffic_marks)
-  {
-    if (mark.Type == )
+  bool validDistanceToObstacleFront = false;
+  const float maxDetectionAngle = config().get<float>("obstacleDetectionAngle",30)*M_PI/180;
+  // TODO: subscribe to laserscan to measure distances to front/back
+  if(laser_data->points().size() > 0) {
+    float smallestDistance = FLT_MAX;
+    int added = 0;
+
+    for(const lms::math::vertex2f &v: laser_data->points())
+    {
+      if(std::fabs(v.angle()) < maxDetectionAngle){
+        // get smallest distance
+        if(v.length() < smallestDistance){
+          smallestDistance = v.length();
+          added++;
+
+        }
+      }
+    }
+
+    if(added!= 0) {
+      validDistanceToObstacleFront = true;
+      distanceToObstacleFront = smallestDistance;
+      ROS_INFO_NAMED(stream_name_, "[PARKING] Distance to the obstacle up front "<<distanceToObstacleFront);
+    }
+  }else{
+    ROS_WARN_STREAM_NAMED(stream_name_, "[PARKING] No lidar data given!");
   }
 }
 
-bool Parking::cycle() {
+bool Parking::triggerParking() {
+  ROS_INFO_NAMED(stream_name_, "[PARKING] Starting to park");
+
   // TODO: compute yaw angle difference
   if(m_cycleCounter > 10){
     logger.error("yaw angle: ") << car_yawAngle*(float)180/M_PI;
@@ -56,36 +84,6 @@ bool Parking::cycle() {
     }else{
       car_yawAngle += -oldDeltaPhi;
     }
-  }
-
-  ROS_INFO_NAMED(stream_name_, "[PARKING] Starting to park");
-  float distanceToObstacleFront = 0;
-  bool validDistanceToObstacleFront = false;
-  const float maxDetectionAngle = config().get<float>("obstacleDetectionAngle",30)*M_PI/180;
-  // TODO: subscribe to laserscan to measure distances to front/back
-  if(laser_data->points().size() > 0){
-    float smallestDistance = FLT_MAX;
-    int added = 0;
-
-    for(const lms::math::vertex2f &v: laser_data->points()){
-      if(std::fabs(v.angle()) < maxDetectionAngle){
-        // get smallest distance
-        if(v.length() < smallestDistance){
-          smallestDistance = v.length();
-          added++;
-
-        }
-      }
-    }
-
-
-    if(added!= 0) {
-      validDistanceToObstacleFront = true;
-      distanceToObstacleFront = smallestDistance;
-      ROS_INFO_NAMED(stream_name_, "[PARKING] Distance to the obstacle up front "<<distanceToObstacleFront);
-    }
-  }else{
-    ROS_WARN_STREAM_NAMED(stream_name_, "[PARKING] No lidar data given!");
   }
 
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand drive_command;
@@ -435,8 +433,10 @@ bool Parking::checkForGap()
 
   timeSpaceWasFound = parking->timestamp();
 
-  if(size > cfg_.min_parking_space_size && size < cfg_.max_parking_space_size){
-    ROS_INFO_STREAM(stream_name_, "[PARKING] valid parking space found! Size: " << size << ", at: " << parking->position;
+  if(size > cfg_.min_parking_space_size && size < cfg_.max_parking_space_size)
+  {
+    ROS_INFO_STREAM_NAMED(stream_name_,
+                          "[PARKING] valid parking space found! Size: " << size << ", at: " << parking->position);
     posXGap = parking->position;
     parkingSpaceSize = size;
     return true;

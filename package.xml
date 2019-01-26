@@ -49,6 +49,8 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>drive_ros_image_recognition</build_depend>
+  <build_depend>drive_ros_environment_model</build_depend>
+  <build_depend>message_filters</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
@@ -59,6 +61,8 @@
   <run_depend>sensor_msgs</run_depend>
   <run_depend>image_transport</run_depend>
   <run_depend>drive_ros_image_recognition</run_depend>
+  <run_depend>drive_ros_environment_model</run_depend>
+  <run_depend>message_filters</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

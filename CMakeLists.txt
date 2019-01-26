@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
         image_transport
         sensor_msgs
         cv_bridge
+        drive_ros_environment_model
         )
 
 if (SUBSCRIBE_DEBUG)
@@ -31,7 +32,8 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
         INCLUDE_DIRS include
-        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure drive_ros_uavcan cv_bridge sensor_msgs image_transport drive_ros_image_recognition
+        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure drive_ros_uavcan cv_bridge sensor_msgs
+                        image_transport drive_ros_image_recognition drive_ros_environment_model
 )
 
 include_directories(

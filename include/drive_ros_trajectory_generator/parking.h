@@ -7,9 +7,12 @@
 #include <float.h>
 #include <drive_ros_uavcan/phoenix_msgs__ParallelParking.h>
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
+#include <drive_ros_msgs/DrivingLine.h>
 #include <sensor_msgs/LaserScan.h>
 #include <drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h>
 #include <drive_ros_msgs/EnvironmentModel.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/subscriber.h>
 
 class Parking {
 public:
@@ -28,7 +31,7 @@ public:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
 
-    bool cycle();
+    bool triggerParking();
 
     bool checkForGap();
     void updatePositionFromHall();
@@ -37,17 +40,15 @@ public:
     void setSteeringAngles(double y_soll, double phi_soll, int drivingMode);
     void setSteeringAngles(double y_soll, double phi_soll, double y_ist, double phi_ist, int drivingMode);
     double getDistanceToMiddleLane();
-    std::string stream_name_ = "parking_controller";
 
-    void environmentModelCB(const drive_ros_msgs::EnvironmentModelConstPtr &env_in);
-
-//    ros::Subscriber<drive_ros_uavcan::phoenix_msgs__ParallelParking> parking_spot_sub_;
-//    ros::Publisher<drive_ros_uavcan::phoenix_msgs__NucDriveCommand> drive_command_pub_;
-//    ros::Subscriber<sensor_msgs::LaserScan> laser_sub_;
+    void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
+                                 const sensor_msgs::LaserScanConstPtr &scan);
     ros::Subscriber parking_spot_sub_;
-    ros::Subscriber laser_sub_;
+    message_filters::Subscriber<drive_ros_msgs::DrivingLine> driving_line_sub_;
+    message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub_;
+    message_filters::TimeSynchronizer<drive_ros_msgs::DrivingLine, drive_ros_msgs::ObstacleArray> sync_;
     ros::Publisher drive_command_pub_;
-    ros::Subscriber env_model_sub_;
+    std::string stream_name_ = "parking_controller";
     PullOutState pulloutstate;
     ParkingState currentState;
     bool firstCircleArc;
@@ -66,7 +67,10 @@ public:
     double posXGap;
     double parkingSpaceSize;
 
-    //hack
+    // asynchronously filled by callback
+    float distanceToObstacleFront;
+
+    // hack
     int m_cycleCounter;
     double move_straight_start_pos;
     double finished_pos;

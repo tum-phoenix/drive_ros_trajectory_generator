@@ -1,6 +1,6 @@
 #include "drive_ros_trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
-#include <drive_ros_trajectory_generator/polygon_msg_operations.h>
+#include <drive_ros_environment_model/polygon_msg_operations.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <sensor_msgs/Image.h>
 #include <opencv2/imgproc/imgproc.hpp>
