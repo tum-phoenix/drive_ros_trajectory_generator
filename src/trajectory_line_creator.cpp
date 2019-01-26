@@ -87,6 +87,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   float laneChangeDistance = 0.f;
   float presetSteeringAngle;
   bool steeringAngleFixed = false;
+  drive_ros_uavcan::phoenix_msgs__NucDriveCommand::_blink_com_type blink_com =
+          drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
   switch (drivingCommand) {
     case (drive_ros_msgs::TrajectoryMetaInput::STANDARD):
       // nothing to do
@@ -94,20 +96,24 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_LEFT):
       // shift lane distance to the left
       laneChangeDistance = laneWidth;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_RIGHT):
       // shift lane distance to the right
       laneChangeDistance = -laneWidth;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
       // hard-code steering angle to the left
       presetSteeringAngle = crossingTurnAngle;
       steeringAngleFixed = true;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_RIGHT):
       // hard code steering angle to the right
       presetSteeringAngle = -crossingTurnAngle;
       steeringAngleFixed = true;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::STRAIGHT_FORWARD):
       // fix steering to go straight
@@ -178,6 +184,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   driveCmdMsg.phi_f = -kappa*understeerFactor;
   driveCmdMsg.phi_r = 0.0f;
   driveCmdMsg.lin_vel = vGoal;
+  driveCmdMsg.blink_com = blink_com;
 
   //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
   ROS_INFO_NAMED(stream_name_, "Steering front = %.1f[deg]", driveCmdMsg.phi_f * 180.f / M_PI);
