@@ -8,7 +8,8 @@
 #include <drive_ros_uavcan/phoenix_msgs__ParallelParking.h>
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
 #include <sensor_msgs/LaserScan.h>
-
+#include <drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h>
+#include <drive_ros_msgs/EnvironmentModel.h>
 
 class Parking {
 public:
@@ -36,6 +37,9 @@ public:
     void setSteeringAngles(double y_soll, double phi_soll, int drivingMode);
     void setSteeringAngles(double y_soll, double phi_soll, double y_ist, double phi_ist, int drivingMode);
     double getDistanceToMiddleLane();
+    std::string stream_name_ = "parking_controller";
+
+    void environmentModelCB(const drive_ros_msgs::EnvironmentModelConstPtr &env_in);
 
 //    ros::Subscriber<drive_ros_uavcan::phoenix_msgs__ParallelParking> parking_spot_sub_;
 //    ros::Publisher<drive_ros_uavcan::phoenix_msgs__NucDriveCommand> drive_command_pub_;
@@ -43,6 +47,7 @@ public:
     ros::Subscriber parking_spot_sub_;
     ros::Subscriber laser_sub_;
     ros::Publisher drive_command_pub_;
+    ros::Subscriber env_model_sub_;
     PullOutState pulloutstate;
     ParkingState currentState;
     bool firstCircleArc;
@@ -52,6 +57,7 @@ public:
     bool straightMove;
     bool yawAngleSet;
     int finishCounter;
+    drive_ros_trajectory_generator::TrajectoryLineCreationConfig cfg_;
 
     double car_yawAngle, car_xPosition;
     double yawAngleStartEntering;

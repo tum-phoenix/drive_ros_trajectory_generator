@@ -210,7 +210,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   //}
 }
 
-void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {
+void TrajectoryLineCreator::reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config,
+                                          uint32_t level) {
 	minForwardDist = config.min_forward_dist;
 	currentVelocity = config.current_velocity;
   crossingTurnAngle = config.crossing_turn_angle;

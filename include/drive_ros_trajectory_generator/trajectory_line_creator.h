@@ -58,8 +58,8 @@ private:
     std::string stream_name_ = "TRAJECTORY_GENERATOR";
 
     // Dynamic reconfigure
-    void reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
-    dynamic_reconfigure::Server<trajectory_generator::TrajectoryLineCreationConfig> reconfigure_server_;
+    void reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
+    dynamic_reconfigure::Server<drive_ros_trajectory_generator::TrajectoryLineCreationConfig> reconfigure_server_;
 };
 
 } // namespace drive_ros_trajectory_generator
