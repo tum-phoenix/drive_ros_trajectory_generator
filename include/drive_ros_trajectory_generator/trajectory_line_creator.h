@@ -14,7 +14,7 @@
 #endif
 #include <drive_ros_image_recognition/common_image_operations.h>
 
-namespace trajectory_generator{
+namespace drive_ros_trajectory_generator{
 
 class TrajectoryLineCreator {
 
@@ -62,6 +62,6 @@ private:
     dynamic_reconfigure::Server<trajectory_generator::TrajectoryLineCreationConfig> reconfigure_server_;
 };
 
-} // namespace trajectory_generator
+} // namespace drive_ros_trajectory_generator
 
 #endif // TRAJECTORY_LINE_CREATOR_H
