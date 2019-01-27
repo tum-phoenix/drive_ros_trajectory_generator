@@ -207,7 +207,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       image_point_vec.clear();
       float forward_draw_distance = 0.1f;
       world_point_vec.push_back(cv::Point2f(0.1f, 0.f));
-      world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance, std::tan(kappa)*forward_draw_distance));
+      world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance,
+                                            std::tan(kappa*understeerFactor)*forward_draw_distance));
       image_operator_.worldToWarpedImg(world_point_vec, image_point_vec);
       cv::arrowedLine(debug_img_, image_point_vec[0], image_point_vec[1], cv::Scalar(0, 0, 255), 2);
       sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg();
