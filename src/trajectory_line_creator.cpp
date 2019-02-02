@@ -116,11 +116,11 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     break;
   }
 
-  forwardDistanceY = compute_polynomial_at_location(msg, forwardDistanceX);
+  forwardDistanceY = compute_polynomial_at_location(msg->polynom_params, msg->polynom_order, forwardDistanceX);
 
   // compute derivative on carrot point to get normal if we need to offset ortogonally (lane change)
   if (laneChangeDistance != 0.f) {
-    float derivative = derive_polynomial_at_location(msg, forwardDistanceX);
+    float derivative = derive_polynomial_at_location(msg->polynom_params, msg->polynom_order, forwardDistanceX);
 
     // compute normal vector
     float vec_x = -derivative;
