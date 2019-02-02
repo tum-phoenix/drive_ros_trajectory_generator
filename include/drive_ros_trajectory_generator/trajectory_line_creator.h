@@ -41,7 +41,8 @@ private:
 
     //  for commands from BT
     float laneWidth = 0.4f;
-    float crossingTurnAngle = 0.4f;
+    float crossingTurnAngleLeft = 0.35f;
+    float crossingTurnAngleRight = 0.6f;
     short int drivingCommand = drive_ros_msgs::TrajectoryMetaInput::STANDARD;
 
     void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg);

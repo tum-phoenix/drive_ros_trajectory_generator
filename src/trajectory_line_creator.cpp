@@ -105,13 +105,13 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
       // hard-code steering angle to the left
-      presetSteeringAngle = crossingTurnAngle;
+      presetSteeringAngle = crossingTurnAngleLeft;
       steeringAngleFixed = true;
       blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_RIGHT):
       // hard code steering angle to the right
-      presetSteeringAngle = -crossingTurnAngle;
+      presetSteeringAngle = -crossingTurnAngleRight;
       steeringAngleFixed = true;
       blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
     break;
@@ -219,9 +219,10 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 }
 
 void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {
-	minForwardDist = config.min_forward_dist;
-	currentVelocity = config.current_velocity;
-  crossingTurnAngle = config.crossing_turn_angle;
+  minForwardDist = config.min_forward_dist;
+  currentVelocity = config.current_velocity;
+  crossingTurnAngleLeft = config.crossing_turn_angle_left;
+  crossingTurnAngleRight = config.crossing_turn_angle_right;
   laneWidth = config.lane_width;
   hardcodedForwardDistance = config.hardcoded_forward_distance;
   understeerFactor = config.understeer_factor;
