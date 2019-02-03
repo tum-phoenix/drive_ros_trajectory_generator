@@ -23,6 +23,7 @@
             <rosparam command="load" file="$(find drive_ros_image_recognition)/config/homography.yaml"/>
             <remap from="homography_in" to="$(arg homography_topic)"/>
             <remap from="camera_info" to="$(arg camera_info_topic)"/>
+            <rosparam command="load" file="$(find drive_ros_trajectory_generator)/config/car_params.yaml"/>
         </node>
     </group>
 
@@ -31,6 +32,7 @@
             <remap from="line_in" to="$(arg driving_line_topic)"/>
             <remap from="can_topic" to="$(arg uavcan_topic)"/>
             <remap from="meta_in" to="$(arg trajectory_meta_input_topic)"/>
+            <rosparam command="load" file="$(find drive_ros_trajectory_generator)/config/car_params.yaml"/>
         </node>
     </group>
 </launch>

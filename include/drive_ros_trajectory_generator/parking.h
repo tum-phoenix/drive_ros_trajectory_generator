@@ -9,10 +9,8 @@
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
 #include <drive_ros_msgs/DrivingLine.h>
 #include <sensor_msgs/LaserScan.h>
-#include <drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h>
+#include "drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h"
 #include <drive_ros_msgs/EnvironmentModel.h>
-#include <message_filters/time_synchronizer.h>
-#include <message_filters/subscriber.h>
 
 class Parking {
 public:
@@ -42,16 +40,20 @@ public:
     double getDistanceToMiddleLane();
 
     void scanCB(const sensor_msgs::LaserScanConstPtr &scan);
+    void parkingSpotCB(const drive_ros_uavcan::phoenix_msgs__ParallelParking &parking_gap);
     void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
                                  const sensor_msgs::LaserScanConstPtr &scan);
+    ros::Time startParkingStamp;
     ros::Subscriber parking_spot_sub_;
-    message_filters::Subscriber<drive_ros_msgs::DrivingLine> driving_line_sub_;
-    message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub_;
-    message_filters::TimeSynchronizer<drive_ros_msgs::DrivingLine, sensor_msgs::LaserScan> sync_;
+    ros::Subscriber scan_sub_;
     ros::Publisher drive_command_pub_;
     std::string stream_name_ = "parking_controller";
     PullOutState pulloutstate;
     ParkingState currentState;
+    double lr; //Radstand
+    double l;  //Fahrzeuglänge
+    double b; //Fahrzeugbreite
+    double delta_max; //maximum steering angle
     bool firstCircleArc;
     double lastTimeStamp, lastImuTimeStamp, currentXPosition;
     double y0_dynamic, ind_end, endX;

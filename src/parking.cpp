@@ -1,10 +1,7 @@
 #include <drive_ros_trajectory_generator/parking.h>
-#include <drive_ros_environment_model/sign_string_to_id.h>
 #include <limits>
 
-Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh) :
-  driving_line_sub_(nh, "driving_line_in", 1),
-  laser_sub_(nh, "laserscan_in", 1)
+Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh)
 {
   pnh_ = pnh;
   nh_ = nh;
@@ -25,9 +22,15 @@ Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh) :
   firstCircleArc = true;
   parkingSpaceSize = 0.0;
 
+  scan_sub_ = nh_.subscribe("scan_in", 2, &Parking::scanCB, this);
   parking_spot_sub_ = nh_.subscribe("parking_spot_in", 2, &Parking::parkingSpotCB, this);
   drive_command_pub_ = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
-  sync_.registerCallback(boost::bind(&Parking::syncCallback, this, _1, _2));
+
+  pnh_.param<float>("wheel_base", lr, 0.23); //Radstand
+  pnh_.param<float>("car_length", l, 0.39);  //Fahrzeuglänge
+  pnh_.param<float>("car_width", l, 0.21); //Fahrzeugbreite
+  pnh_.param<float>("car_width", l, 32); //maximum steering angle
+  l = l*M_PI/180;
 
   currentXPosition = 0;
   lastTimeStamp = -1;
@@ -39,55 +42,48 @@ Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh) :
   distanceToObstacleFront = 0;
 }
 
-void scanCB(const sensor_msgs::LaserScanConstPtr &scan){
+void Parking::scanCB(const sensor_msgs::LaserScanConstPtr &scan){
+    bool validDistanceToObstacleFront = false;
+    const float maxDetectionAngle = cfg_.obstacle_detection_angle*M_PI/180;
+    if (scan->ranges.size() > 0) {
+        float smallestDistance = std::numeric_limits<float>::infinity();
+        int added = 0;
 
-}
-
-void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
-                             const sensor_msgs::LaserScanConstPtr &scan)
-{
-  bool validDistanceToObstacleFront = false;
-  const float maxDetectionAngle = cfg_.obstacle_detection_angle*M_PI/180;
-  if (laser_data->points().size() > 0) {
-    float smallestDistance = std::numeric_limits<float>::lowest();
-    int added = 0;
-
-    for(const lms::math::vertex2f &v: laser_data->points())
-    {
-      if(std::fabs(v.angle()) < maxDetectionAngle) {
-        // get smallest distance
-        if(v.length() < smallestDistance) {
-          smallestDistance = v.length();
-          added++;
+        for (int i=0; i<scan->ranges.size(); ++i)
+        {
+            if(std::fabs(scan->angle_min+scan->angle_increment*i) < maxDetectionAngle) {
+                // get smallest distance
+                if(scan->ranges[i] < smallestDistance) {
+                    smallestDistance = scan->ranges[i];
+                    added++;
+                }
+            }
         }
-      }
-    }
 
-    if(added!= 0) {
-      validDistanceToObstacleFront = true;
-      distanceToObstacleFront = smallestDistance;
-      ROS_INFO_NAMED(stream_name_, "[PARKING] Distance to the obstacle up front "<<distanceToObstacleFront);
+        if(added!= 0) {
+            validDistanceToObstacleFront = true;
+            distanceToObstacleFront = smallestDistance;
+            ROS_INFO_STREAM_NAMED(stream_name_, "[PARKING] Distance to the obstacle up front "<<distanceToObstacleFront);
+        }
+    }else{
+        ROS_WARN_STREAM_NAMED(stream_name_, "[PARKING] No lidar data given!");
     }
-  }else{
-    ROS_WARN_STREAM_NAMED(stream_name_, "[PARKING] No lidar data given!");
-  }
 }
 
 bool Parking::triggerParking() {
   ROS_INFO_NAMED(stream_name_, "[PARKING] Starting to park");
 
-  // TODO: compute yaw angle difference
-  if(m_cycleCounter > 10){
-    logger.error("yaw angle: ") << car_yawAngle*(float)180/M_PI;
+//  if(m_cycleCounter > 10){
+//    ROS_ERROR_STREAM("yaw angle: "<< car_yawAngle*(float)180/M_PI);
 
-    if(cfg_.yaw_threshold >= std::fabs(car->deltaPhi()))
-    {
-      car_yawAngle += -car->deltaPhi();
-      oldDeltaPhi = car->deltaPhi();
-    }else{
-      car_yawAngle += -oldDeltaPhi;
-    }
-  }
+//    if(cfg_.yaw_threshold >= std::fabs())
+//    {
+//      car_yawAngle += -car->deltaPhi();
+//      oldDeltaPhi = car->deltaPhi();
+//    } else {
+//      car_yawAngle += -oldDeltaPhi;
+//    }
+//  }
 
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand drive_command;
   switch (currentState)
@@ -96,56 +92,59 @@ bool Parking::triggerParking() {
   {
 
     // turn of indicators
-    state.indicatorLeft = false;
-    state.indicatorRight = false;
+    drive_command.blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
 
     /***************************************************
          * drive straight along the middle of the right lane
          ***************************************************/
 
 
-    //the desired state is such that phi=0 (straight driving) and y=0.2 (middle of right lane) with respect to the middle lane
-    setSteeringAngles(config().get<float>("searchingMiddleOffset",-0.2), config().get<float>("searchingAngle", 0), DrivingMode::FORWARD);
+    // the desired state is such that phi=0 (straight driving) and y=0.2 (middle of right lane) with respect to the middle lane
+    setSteeringAngles(cfg_.obstacle_detection_angle, cfg_.searching_angle, DrivingMode::FORWARD);
 
-    state.targetSpeed = cfg_.velocity_searching;
+    drive_command.lin_vel = cfg_.velocity_searching;
 
     // check if we detected a valid parking space
     bool spaceFound = checkForGap();
     ROS_DEBUG_STREAM_NAMED(stream_name_, "[PARKING] Searching for gap, found "<<spaceFound);
 
-    if (spaceFound)
+    if (spaceFound) {
       currentState = ParkingState::STOPPING;
+      startParkingStamp = ros::Time::now();
+    }
 
     break;
   }
     //Anhalten nach Searching
   case ParkingState::STOPPING:
   {
-    logger.debug("STOPPING");
+    ROS_INFO_NAMED(stream_name_, "STOPPING");
 
     /***************************************************
         * come to a stop, but dont slip (otherwise the position measurements are crap)
         ***************************************************/
 
     //drive straight still
-    setSteeringAngles(config().get<float>("searchingMiddleOffset",-0.2), config().get<float>("searchingPhiFactor"), DrivingMode::FORWARD);
+    setSteeringAngles(cfg_.searching_middle_offset, cfg_.searching_phi_factor, DrivingMode::FORWARD);
 
     //update current x-position
     updatePositionFromHall();
 
     //set target speed as if the car was decelerating constantly
-    if (config().get<float>("decelerationStopping", 3.0)) {
-      state.targetSpeed = config().get<float>("velocitySearching", 1.0) - timeSpaceWasFound.since().toFloat()*config().get<float>("decelerationStopping", 3.0);
+    if (cfg_.deceleration_stopping) {
+      drive_command.lin_vel = cfg_.velocty_searching - (ros::Time::now()-startParkingStamp).toSec()*
+              cfg_.deceleration_stopping;
     }
     else
     {
-      state.targetSpeed = 0.0;
+      drive_command.lin_vel = 0.0;
     }
 
     //int num_y_vals = config().get("numberOfY0measurements", 20);
-    if (car->velocity() < config().get("minVelocityBeforeDrivingBackwards", 0.4)) {
+    // todo: get velocity from TF here
+    if (car->velocity() < cfg_.min_velocity_before_driving_backwards) {
 
-      y0_dynamic = config().get<float>("y0_worstCase", 0.23);
+      y0_dynamic = cfg_.y0_worstCase;
 
       currentState = ParkingState::ENTERING;
     }
@@ -155,23 +154,18 @@ bool Parking::triggerParking() {
     //Wir fahren in die Parklücke
   case ParkingState::ENTERING:
   {
-    logger.debug("ENTERING");
+    ROS_INFO_NAMED(stream_name_, "ENTERING");
 
-    state.indicatorLeft = false;
-    state.indicatorRight = true;
+    drive_command.blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
 
     updatePositionFromHall();
 
     /***************************************************
         * calculate parameters for entering maneuver
         ***************************************************/
-    const double lr = config().get<float>("wheelbase", 0.21); //Radstand
-    const double l = config().get<float>("carLength", 0.32);  //Fahrzeuglänge
-    const double b = config().get<float>("carWidth", 0.2); //Fahrzeugbreite
-    const double delta_max = config().get("maxSteeringAngle", 24)*M_PI/180; //maximum steering angle
-    const double k = config().get<float>("k", 0.03); //Sicherheitsabstand zur Ecke der 2. Box
-    const double d = config().get<float>("d", 0.05); //Sicherheitsabstand zur 1. Box im eingeparkten Zustand
-    const double y0 = config().get<float>("y0_worstCase", 0.24); //seitlicher Abstand zur zweiten Box
+    const double k = cfg_.k; //Sicherheitsabstand zur Ecke der 2. Box
+    const double d = cfg_.d; //Sicherheitsabstand zur 1. Box im eingeparkten Zustand
+    const double y0 = cfg_.y0_worstCase; //seitlicher Abstand zur zweiten Box
 
     //TODO delta_max + 1*pi/180;
     const double r = lr/2*tan(M_PI/2 - (delta_max-1*M_PI/180)); //Radius des Wendekreises (bezogen auf den Fahrzeugmittelpunkt) bei Volleinschlag beider Achsen
@@ -179,13 +173,13 @@ bool Parking::triggerParking() {
     const double s = sqrt((R+k)*(R+k) - ( - d - l/2)*( - d - l/2));
     const double alpha = acos((r-y0+s)/(2*r)); //Winkel (in rad) der 2 Kreisboegen, die zum einfahren genutzt werden
     const double x0 = d + l/2 + 2*r*sin(alpha); //Abstand vom Ende der 2. Box zur Mitte des Fahrzeugs bei Lenkbeginn (Anfang erster Kreisbogen)
-    const double x_begin_steering = config().get<float>("xDistanceCorrection",0.09) + endX + x0 - config().get<float>("distanceMidLidarX", 0.09);
+    const double x_begin_steering = cfg_.x_distance_correction + endX + x0 - cfg_.distance_mid_lidar_x;
     //drive straight backwards
     if (currentXPosition > x_begin_steering){
-      logger.debug("Driving straight backwards");
+      ROS_INFO_NAMED(stream_name_, "Driving straight backwards");
       //setSteeringAngles(-0.2, config().get<float>("searchingPhiFactor"), DrivingMode::BACKWARDS);
-      state.steering_front = 0.0;
-      state.steering_rear = 0.0;
+      drive_command.phi_r = 0.0;
+      drive_command.phi_f = 0.0;
       /*
             double brakingDistance = config().get<float>("brakingDistanceUntilSteering", 0.15);
             //TODO evtl
@@ -198,12 +192,12 @@ bool Parking::triggerParking() {
             }
             else
             { */
-      state.targetSpeed = -config().get<float>("velocityApproaching", 0.5);
+      drive_command.lin_vel = -cfg_.velocity_approaching;
       //}
 
     }else{
       //begin steering into parking space
-      state.targetSpeed = -config().get<float>("velocityEntering", 0.5);
+      drive_command.lin_vel = -cfg_.velocty_entering;
 
       if (! yawAngleSet)
       {
@@ -215,22 +209,22 @@ bool Parking::triggerParking() {
 
       if (firstCircleArc) {
         // set servos to max steering angle
-        state.steering_front = -delta_max;
-        state.steering_rear = delta_max;
-        logger.debug("driven arc")<<drivenArc<<" target: "<<alpha;
+        drive_command.phi_f = -delta_max;
+        drive_command.phi_r = delta_max;
+        ROS_INFO_STREAM_NAMED(stream_name_, "Driven arc "<<drivenArc<<" target: "<<alpha);
         if (drivenArc >= alpha) {
           firstCircleArc = false;
         }
       }
       else {
         // set servos to max steering angle in other direction
-        state.steering_front = delta_max;
-        state.steering_rear = -delta_max;
+        drive_command.phi_f = delta_max;
+        drive_command.phi_r = -delta_max;
 
-        if (drivenArc <= 0.0 + config().get<float>("alphaOffset",0.0)) {
-          state.steering_front = 0.0; // * 180. / M_PI;
-          state.steering_rear = 0.0; // * 180. / M_PI;
-          state.targetSpeed = 0.0; //config().get<float>("velocityCorrecting", 0.5);
+        if (drivenArc <= 0.0 + cfg_.alpha_offset) {
+          drive_command.phi_f = 0.0; // * 180. / M_PI;
+          drive_command.phi_r = 0.0; // * 180. / M_PI;
+          drive_command.lin_vel = 0.0; //config().get<float>("velocityCorrecting", 0.5);
 
           currentXPosition = 0;
           currentState = ParkingState::CORRECTING;

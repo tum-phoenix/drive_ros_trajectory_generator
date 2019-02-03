@@ -1,0 +1,4 @@
+wheel_base: 0.223 # wheel base of the car [m]
+car_length: 0.39 # car length [m]
+car_width: 0.21 # car width [m]
+maxSteeringAngle: 32 # maximum steering angle [deg]
