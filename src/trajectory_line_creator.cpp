@@ -1,12 +1,12 @@
 #include "drive_ros_trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
-#include <drive_ros_trajectory_generator/polygon_msg_operations.h>
+#include <drive_ros_environment_model/polygon_msg_operations.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <sensor_msgs/Image.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #endif
 
-namespace trajectory_generator {
+namespace drive_ros_trajectory_generator {
 
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
@@ -125,7 +125,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     break;
   }
 
-  forwardDistanceY = compute_polynomial_at_location(msg->polynom_params, msg->polynom_order, forwardDistanceX);
+  forwardDistanceY = compute_driving_lane_at_location(msg, forwardDistanceX);
 
   // compute derivative on carrot point to get normal if we need to offset ortogonally (lane change)
   if (laneChangeDistance != 0.f) {
@@ -224,7 +224,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   //}
 }
 
-void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {
+void TrajectoryLineCreator::reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config,
+                                          uint32_t level) {
   minForwardDist = config.min_forward_dist;
   currentVelocity = config.current_velocity;
   crossingTurnAngleLeft = config.crossing_turn_angle_left;
@@ -234,4 +235,4 @@ void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCr
   understeerFactor = config.understeer_factor;
 }
 
-} // end namespace trajectory_generator
+} // end namespace drive_ros_trajectory_generator

@@ -9,10 +9,8 @@
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
 #include <drive_ros_msgs/DrivingLine.h>
 #include <sensor_msgs/LaserScan.h>
-#include <drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h>
+#include "drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h"
 #include <drive_ros_msgs/EnvironmentModel.h>
-#include <message_filters/time_synchronizer.h>
-#include <message_filters/subscriber.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
@@ -36,7 +34,7 @@ public:
 
     bool triggerParking();
 
-    bool checkForGap();
+//    bool checkForGap();
     void updatePositionFromHall();
 
     void fitLineToMiddleLane(double *oM, double *oB);
@@ -47,14 +45,14 @@ public:
     void scanCB(const sensor_msgs::LaserScanConstPtr &scan);
     void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
                                  const sensor_msgs::LaserScanConstPtr &scan);
-    ros::Subscriber parking_spot_sub_;
-    message_filters::Subscriber<drive_ros_msgs::DrivingLine> driving_line_sub_;
-    message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub_;
-    message_filters::TimeSynchronizer<drive_ros_msgs::DrivingLine, sensor_msgs::LaserScan> sync_;
+    ros::Subscriber scan_sub_;
     ros::Publisher drive_command_pub_;
     std::string stream_name_ = "parking_controller";
     PullOutState pulloutstate;
     ParkingState currentState;
+    float lr; //Radstand
+    float l;  //Fahrzeuglänge
+    float b; //Fahrzeugbreite
     bool firstCircleArc;
     double lastTimeStamp, lastImuTimeStamp, currentXPosition;
     double y0_dynamic, ind_end, endX;
@@ -70,6 +68,10 @@ public:
 
     double posXGap;
     double parkingSpaceSize;
+
+    bool measuringGap = false;
+    ros::Time gapFoundAt;
+    bool spaceFound = false;
 
     tf2_ros::TransformListener tfListener;
     tf2_ros::Buffer tfBuffer;
