@@ -4,7 +4,8 @@
 
 Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh) :
   driving_line_sub_(nh, "driving_line_in", 1),
-  laser_sub_(nh, "laserscan_in", 1)
+  laser_sub_(nh, "laserscan_in", 1),
+  tfListener(tfBuffer)
 {
   pnh_ = pnh;
   nh_ = nh;
@@ -244,182 +245,182 @@ bool Parking::triggerParking() {
   }
   case ParkingState::CORRECTING:
   {
-    logger.debug("CORRECTING");
-    state.indicatorLeft = false;
-    state.indicatorRight = false;
+	  ROS_INFO("ParkingState::CORRECTING");
+	  drive_command.blink_com = drive_command.NO_BLINK;
 
-    updatePositionFromHall();
+	  updatePositionFromHall();
 
-    std::vector<float> correctingDistances = config().getArray<float>("correctingDistances");
+	  std::vector<float> correctingDistances = cfg_.correcting_distances;
+	  double velocityCorrectin = 0.5; // TODO: in config
 
-    if (correctingCounter >= (int)correctingDistances.size()){
-      currentState = ParkingState::FINISHED;
-    }else{
-      double phi_ist = car_yawAngle - yawAngleStartEntering;
+	  if (correctingCounter >= (int)correctingDistances.size()) {
+		  currentState = ParkingState::FINISHED;
+	  } else {
+		  double phi_ist = car_yawAngle - yawAngleStartEntering;
 
-      if (correctingCounter%2 == 0) //forward
-      {
-        state.targetSpeed = config().get<float>("velocityCorrecting", 0.5);
-        setSteeringAngles(-0.29, 0.0, 0.0, 0.0*phi_ist, DrivingMode::FORWARD);
+		  if((correctingCounter % 2) == 0) //forward
+		  {
 
-        logger.debug("forward Correcting");
-        //mit dem lidar den Frontabstand Messen
-        float correctingDistance = correctingDistances.at(correctingCounter);
-        // TODO: this doesnt work
-        if(false && validDistanceToObstacleFront){
-          logger.debug("distanceToObstacleFront")<<distanceToObstacleFront;
-          correctingDistance = distanceToObstacleFront-config().get<float>("distanceToObstacleFront",0.28);
-          logger.debug("correctingDistance")<<correctingDistance<<" currentXPosition "<<currentXPosition;
-          if(correctingDistance < 0){
-            correctingCounter++;
-            currentXPosition = 0.0;
-          }
-        }else{
-          logger.debug("no validDistanceToObstacleFront found")<<distanceToObstacleFront;
-          if (currentXPosition >= correctingDistance){
-            ++correctingCounter;
-            currentXPosition = 0.0;
-          }
-        }
+			  drive_command.lin_vel = velocityCorrectin;
+			  setSteeringAngles(drive_command, -0.29, 0.0, 0.0, 0.0*phi_ist, DrivingMode::FORWARD);
 
-      }
-      else //backwards
-      {
-        state.targetSpeed = -config().get<float>("velocityCorrecting", 0.5);
-        setSteeringAngles(-0.29, 0.0, 0.0, 0.0*phi_ist, DrivingMode::BACKWARDS);
+			  ROS_DEBUG("forward Correcting");
+			  //mit dem lidar den Frontabstand Messen
+			  float correctingDistance = correctingDistances.at(correctingCounter);
+			  // TODO: this doesnt work
+//			  if(false && validDistanceToObstacleFront){
+//				  logger.debug("distanceToObstacleFront")<<distanceToObstacleFront;
+//				  correctingDistance = distanceToObstacleFront-config().get<float>("distanceToObstacleFront",0.28);
+//				  logger.debug("correctingDistance")<<correctingDistance<<" currentXPosition "<<currentXPosition;
+//				  if(correctingDistance < 0){
+//					  correctingCounter++;
+//					  currentXPosition = 0.0;
+//				  }
+//			  } else
+			  {
+				  ROS_DEBUG_STREAM("no validDistanceToObstacleFront found " << distanceToObstacleFront);
+				  if (currentXPosition >= correctingDistance) {
+					  ++correctingCounter;
+					  currentXPosition = 0.0;
+				  }
+			  }
 
-        logger.error("backwards Correcting");
-        float correctingDistance = correctingDistances.at(correctingCounter);
-        // TODO: this doesnt work
-        if(false && validDistanceToObstacleFront){
-          logger.debug("distanceToObstacleFront")<<distanceToObstacleFront;
-          correctingDistance = 0.53-distanceToObstacleFront-config().get<float>("distanceToObstacleRear",0.1);
-          logger.debug("correctingDistance")<<correctingDistance<<" currentXPosition "<<currentXPosition;
-          if(correctingDistance < 0){
-            correctingCounter++;
-            currentXPosition = 0.0;
-          }
-        }else{
-          logger.debug("no validDistanceToObstacleFront found")<<distanceToObstacleFront;
-          if (-currentXPosition >= correctingDistance)
-          {
-            ++correctingCounter;
-            currentXPosition = 0.0;
-          }
-        }
-      }
+		  }
+		  else // backwards
+		  {
+			  drive_command.lin_vel = -1.0 * velocityCorrectin;
+			  setSteeringAngles(drive_command, -0.29, 0.0, 0.0, 0.0*phi_ist, DrivingMode::BACKWARDS);
 
-    }
+			  ROS_DEBUG("backwards Correcting");
+			  float correctingDistance = correctingDistances.at(correctingCounter);
+			  // TODO: this doesnt work
+//			  if(false && validDistanceToObstacleFront){
+//				  logger.debug("distanceToObstacleFront")<<distanceToObstacleFront;
+//				  correctingDistance = 0.53-distanceToObstacleFront-config().get<float>("distanceToObstacleRear",0.1);
+//				  logger.debug("correctingDistance")<<correctingDistance<<" currentXPosition "<<currentXPosition;
+//				  if(correctingDistance < 0){
+//					  correctingCounter++;
+//					  currentXPosition = 0.0;
+//				  }
+//			  }else
+			  {
+				  ROS_DEBUG_STREAM("no validDistanceToObstacleFront found" << distanceToObstacleFront);
+				  if (-currentXPosition >= correctingDistance)
+				  {
+					  ++correctingCounter;
+					  currentXPosition = 0.0;
+				  }
+			  }
+		  }
 
-    break;
+	  }
+
+	  break;
   }
   case ParkingState::FINISHED: {
-    logger.debug("FINISHED");
+	  ROS_DEBUG("FINISHED");
 
-    state.targetSpeed = 0.0;
-    state.steering_front = 0.0;
-    state.steering_rear = 0.0;
+	  drive_command.lin_vel = 0.0;
+	  drive_command.phi_f = 0.0;
+	  drive_command.phi_r = 0.0;
 
-    updatePositionFromHall();
+	  updatePositionFromHall();
 
-    // we are done
-    if (finishCounter > config().get<int>("waitInFinished", 50))
-    {
-      state.indicatorLeft = false;
-      state.indicatorRight = false;
-      currentState = ParkingState::PULLOUT;
-      car_yawAngle = 0;
-      finished_pos = currentXPosition;
+	  // we are done
+	  if (finishCounter > cfg_.wait_in_finished)
+	  {
+		  drive_command.blink_com = drive_command.NO_BLINK;
+		  currentState = ParkingState::PULLOUT;
+		  car_yawAngle = 0;
+		  finished_pos = currentXPosition;
 
-    }
-    else
-    {
-      state.indicatorLeft = true;
-      state.indicatorRight = true;
-    }
+	  }
+	  else
+	  {
+		  drive_command.blink_com = drive_command.BLINK_BOTH;
+	  }
 
-    ++finishCounter;
+	  ++finishCounter;
 
 
-    break;
+	  break;
   }
   case ParkingState::WORST_CASE_BACKWARDS: {
-    logger.debug("WORST_CASE_BACKWARDS");
-    // TODO
+	  ROS_DEBUG("WORST_CASE_BACKWARDS");
+	  // TODO
 
-    break;
+	  break;
   }
   case ParkingState::PULLOUT: {
-    logger.debug("PULL_OUT");
+	  ROS_DEBUG("PULL_OUT");
 
-    updatePositionFromHall();
+	  updatePositionFromHall();
 
-    switch(pulloutstate)
-    {
+	  switch(pulloutstate)
+	  {
 
-    case PullOutState::PULLBACK:{
+	  case PullOutState::PULLBACK:{
 
-      state.targetSpeed = config().get<float>("velocityPullback", -0.5);
-      state.steering_front = 0;
-      state.steering_rear = 0;
+		  drive_command.lin_vel = cfg_.velocity_pullback;
+		  drive_command.phi_f = 0.0;
+		  drive_command.phi_r = 0.0;
 
-      float luecken_factor = (parkingSpaceSize - config().get("minParkingSpaceSize", 0.60))/(float)(config().get<float>("maxParkingSpaceSize", 0.80) - config().get<float>("minParkingSpaceSize", 0.60));
+		  float luecken_factor = (parkingSpaceSize - cfg_.min_parking_space_size)/(cfg_.max_parking_space_size) - cfg_.min_parking_space_size);
 
-      if(finished_pos - luecken_factor*config().get<float>("driveBackwardsDynamic", 0.05) - config().get<float>("driveBackwards", 0.05) > currentXPosition)
-      {
-        //state.targetSpeed = 0.0;
-        pulloutstate = PullOutState::TURN_LEFT;
+		  if(finished_pos - luecken_factor*cfg_.drive_backwards_dynamic - cfg_.drive_backwards > currentXPosition)
+		  {
+			  //state.targetSpeed = 0.0;
+			  pulloutstate = PullOutState::TURN_LEFT;
+		  }
 
-      }
+		  break;
+	  }
+	  case PullOutState::TURN_LEFT:{
+		  drive_command.lin_vel = cfg_.velocity_pullout_turn;
+		  drive_command.phi_f = cfg_.max_steering_angle;
+		  drive_command.phi_r = -1.0 * cfg_.max_steering_angle;
+		  move_straight_start_pos = currentXPosition;
+		  if(car_yawAngle >= cfg_.turn_yaw)
+		  {
+			  pulloutstate=PullOutState::MOVE_STRAIGHT;
+		  }
+		  break;
+	  }
+	  case PullOutState::MOVE_STRAIGHT:{
+		  drive_command.lin_vel = cfg_.velocity_move_straight;
+		  drive_command.phi_f = 0.0;
+		  drive_command.phi_r = 0.0;
+		  if(move_straight_start_pos + cfg_.move_straight_dist < currentXPosition){
+			  pulloutstate=PullOutState::TURN_RIGHT;
+		  }
+		  break;
 
-      break;
-    }
-    case PullOutState::TURN_LEFT:{
-      state.targetSpeed = config().get<float>("velocityTurnLeft", 1);
-      state.steering_front = config().get("maxSteeringAngle", 24);
-      state.steering_rear = -config().get("maxSteeringAngle", 24);
-      move_straight_start_pos = currentXPosition;
-      if(car_yawAngle >= config().get<float>("turnYaw", 0.8))
-      {
-        pulloutstate=PullOutState::MOVE_STRAIGHT;
-      }
-      break;
-    }
-    case PullOutState::MOVE_STRAIGHT:{
-      state.steering_front = 0;
-      state.steering_rear = 0;
-      state.targetSpeed = config().get<float>("velocityMoveStraight", 1);
-      if(move_straight_start_pos + config().get<float>("moveStraight", 0.1) < currentXPosition){
-        pulloutstate=PullOutState::TURN_RIGHT;
-      }
-      break;
+	  }
+	  case PullOutState::TURN_RIGHT:{
+		  state.targetSpeed = cfg_.velocity_pullout_turn;
+		  state.steering_front = -1.0 * cfg_.max_steering_angle;
+		  state.steering_rear = -1.0 * cfg_.max_steering_angle
+		  if(car_yawAngle <= cfg_.turn_second_yaw)
+		  {
+			  pulloutstate=PullOutState::BACK_ON_TRACK;
+		  }
+		  break;
+	  }
+	  case PullOutState::BACK_ON_TRACK: {
 
-    }
-    case PullOutState::TURN_RIGHT:{
-      state.targetSpeed = config().get<float>("velocityTurnRight", 1);;
-      state.steering_front = -config().get("maxSteeringAngle", 24);
-      state.steering_rear = config().get("maxSteeringAngle", 24);
-      if(car_yawAngle <= config().get<float>("turnYaw2", 0.2))
-      {
-        pulloutstate=PullOutState::BACK_ON_TRACK;
-      }
-      break;
-    }
-    case PullOutState::BACK_ON_TRACK: {
+		  // TODO: send "parking_done" command or something else to BT or whatever
+		  //state.targetSpeed = 0;
+		  //state.steering_front = 0;
+		  //state.steering_rear = 0;
 
-      // switch mode back to FOH
-      getService<phoenix_CC2016_service::Phoenix_CC2016Service>("PHOENIX_SERVICE")->setDriveMode(phoenix_CC2016_service::CCDriveMode::PARKING_END);
-      //state.targetSpeed = 0;
-      //state.steering_front = 0;
-      //state.steering_rear = 0;
-
-      break;
-    } // case BACK_ON_TRACK
-    } // switch PullOutState::BACK_ON_TRACK
+		  break;
+	  } // case BACK_ON_TRACK
+	  } // switch PullOutState::BACK_ON_TRACK
   } // case ParkingState::PULLOUT
   } // switch current state
 
-  car->putState(state);
+
+  drive_command_pub_.publish(drive_command);
   return true;
 
 } // cycle
@@ -444,25 +445,31 @@ bool Parking::checkForGap()
     parkingSpaceSize = size;
     return true;
   } else {
-    ROS_INFO_STREAM(stream_name_, "[PARKING] Invalid parking space found! Size: " << size << ", at: " << parking->position;
+    ROS_INFO_STREAM(stream_name_, "[PARKING] Invalid parking space found! Size: " << size << ", at: " << parking->position);
   }
   return false;
 }
 
 void Parking::updatePositionFromHall()
 {
-  if(sensors->hasSensor("HALL")) {
-    auto hall = sensors->sensor<sensor_utils::Odometer>("HALL");
-    auto dst = hall->distance.x();
-    currentXPosition += dst;
-  }else{
-    logger.warn("no hall distance given!");
-    std::string s = "";
-    for(auto a:*sensors){
-      s += a.first + ", ";
-    }
-    logger.warn("sensors given:")<<s;
-  }
+//  if(sensors->hasSensor("HALL")) {
+//    auto hall = sensors->sensor<sensor_utils::Odometer>("HALL");
+//    auto dst = hall->distance.x();
+//    currentXPosition += dst;
+//  }else{
+//    logger.warn("no hall distance given!");
+//    std::string s = "";
+//    for(auto a:*sensors){
+//      s += a.first + ", ";
+//    }
+//    logger.warn("sensors given:")<<s;
+//  }
+
+	geometry_msgs::TransformStamped transform =
+			tfBuffer.lookupTransform(movingFrame, ros::Time::now(), movingFrame, startParkingStamp, staticFrame);
+
+	currentXPosition = transform.transform.translation.x;
+	car_yawAngle = tf::getYaw(transform.transform.rotation);
 }
 
 void Parking::fitLineToMiddleLane(double *oM, double *oB)
@@ -515,7 +522,7 @@ void Parking::fitLineToMiddleLane(double *oM, double *oB)
 
 
 //current values are calculated with respect to the (straight) middle lane
-void Parking::setSteeringAngles(double y_soll, double phi_soll, int drivingMode)
+void Parking::setSteeringAngles(drive_ros_uavcan::phoenix_msgs__NucDriveCommand &driveCmd, double y_soll, double phi_soll, int drivingMode)
 {
 
   //eigenvalues [-2, -2]
@@ -546,12 +553,11 @@ void Parking::setSteeringAngles(double y_soll, double phi_soll, int drivingMode)
   }
 
   //set the desired steering angles
-  state.steering_front = delta_v;
-  state.steering_rear = delta_h;
-
+  driveCmd.phi_f = delta_v;
+  driveCmd.phi_r = delta_h;
 }
 
-void Parking::setSteeringAngles(double y_soll, double phi_soll, double y_ist, double phi_ist, int drivingMode)
+void Parking::setSteeringAngles(drive_ros_uavcan::phoenix_msgs__NucDriveCommand &driveCmd, double y_soll, double phi_soll, double y_ist, double phi_ist, int drivingMode)
 {
 
   //eigenvalues [-2, -2]
@@ -574,9 +580,8 @@ void Parking::setSteeringAngles(double y_soll, double phi_soll, double y_ist, do
   }
 
   //set the desired steering angles
-  state.steering_front = delta_v;
-  state.steering_rear = delta_h;
-
+  driveCmd.phi_f = delta_v;
+  driveCmd.phi_r = delta_h;
 }
 
 double Parking::getDistanceToMiddleLane()

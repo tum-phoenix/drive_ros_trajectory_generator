@@ -13,6 +13,9 @@
 #include <drive_ros_msgs/EnvironmentModel.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 class Parking {
 public:
@@ -37,8 +40,8 @@ public:
     void updatePositionFromHall();
 
     void fitLineToMiddleLane(double *oM, double *oB);
-    void setSteeringAngles(double y_soll, double phi_soll, int drivingMode);
-    void setSteeringAngles(double y_soll, double phi_soll, double y_ist, double phi_ist, int drivingMode);
+    void setSteeringAngles(drive_ros_uavcan::phoenix_msgs__NucDriveCommand &driveCmd, double y_soll, double phi_soll, int drivingMode);
+    void setSteeringAngles(drive_ros_uavcan::phoenix_msgs__NucDriveCommand &driveCmd, double y_soll, double phi_soll, double y_ist, double phi_ist, int drivingMode);
     double getDistanceToMiddleLane();
 
     void scanCB(const sensor_msgs::LaserScanConstPtr &scan);
@@ -67,6 +70,12 @@ public:
 
     double posXGap;
     double parkingSpaceSize;
+
+    tf2_ros::TransformListener tfListener;
+    tf2_ros::Buffer tfBuffer;
+    std::string staticFrame = "odom"; // TODO: from param
+    std::string movingFrame = "rear_axis_middle_ground"; // TODO: from param
+    ros::Time startParkingStamp;
 
     // asynchronously filled by callback
     float distanceToObstacleFront;
