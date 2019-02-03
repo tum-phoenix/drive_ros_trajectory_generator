@@ -87,6 +87,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   float laneChangeDistance = 0.f;
   float presetSteeringAngle;
   bool steeringAngleFixed = false;
+  bool steerFrontAndRear = false;
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand::_blink_com_type blink_com =
           drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
   switch (drivingCommand) {
@@ -97,11 +98,13 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       // shift lane distance to the left
       laneChangeDistance = laneWidth;
       blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
+      steerFrontAndRear = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_RIGHT):
       // shift lane distance to the right
       laneChangeDistance = -laneWidth;
       blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
+      steerFrontAndRear = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
       // hard-code steering angle to the left
@@ -182,7 +185,10 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
   driveCmdMsg.phi_f = -kappa*understeerFactor;
-  driveCmdMsg.phi_r = 0.0f;
+  if (!steerFrontAndRear)
+    driveCmdMsg.phi_r = 0.0f;
+  else
+    driveCmdMsg.phi_r = -kappa*understeerFactor;
   driveCmdMsg.lin_vel = vGoal;
   driveCmdMsg.blink_com = blink_com;
 
