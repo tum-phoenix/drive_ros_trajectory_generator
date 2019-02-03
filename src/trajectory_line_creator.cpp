@@ -1,12 +1,12 @@
 #include "drive_ros_trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
-#include <drive_ros_environment_model/polygon_msg_operations.h>
+#include <drive_ros_trajectory_generator/polygon_msg_operations.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <sensor_msgs/Image.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #endif
 
-namespace drive_ros_trajectory_generator {
+namespace trajectory_generator {
 
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
@@ -87,6 +87,9 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   float laneChangeDistance = 0.f;
   float presetSteeringAngle;
   bool steeringAngleFixed = false;
+  bool steerFrontAndRear = false;
+  drive_ros_uavcan::phoenix_msgs__NucDriveCommand::_blink_com_type blink_com =
+          drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
   switch (drivingCommand) {
     case (drive_ros_msgs::TrajectoryMetaInput::STANDARD):
       // nothing to do
@@ -94,20 +97,26 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_LEFT):
       // shift lane distance to the left
       laneChangeDistance = laneWidth;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
+      steerFrontAndRear = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_RIGHT):
       // shift lane distance to the right
       laneChangeDistance = -laneWidth;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
+      steerFrontAndRear = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
       // hard-code steering angle to the left
-      presetSteeringAngle = crossingTurnAngle;
+      presetSteeringAngle = crossingTurnAngleLeft;
       steeringAngleFixed = true;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_RIGHT):
       // hard code steering angle to the right
-      presetSteeringAngle = -crossingTurnAngle;
+      presetSteeringAngle = -crossingTurnAngleRight;
       steeringAngleFixed = true;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::STRAIGHT_FORWARD):
       // fix steering to go straight
@@ -176,8 +185,12 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
   driveCmdMsg.phi_f = -kappa*understeerFactor;
-  driveCmdMsg.phi_r = 0.0f;
+  if (!steerFrontAndRear)
+    driveCmdMsg.phi_r = 0.0f;
+  else
+    driveCmdMsg.phi_r = -kappa*understeerFactor;
   driveCmdMsg.lin_vel = vGoal;
+  driveCmdMsg.blink_com = blink_com;
 
   //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
   ROS_INFO_NAMED(stream_name_, "Steering front = %.1f[deg]", driveCmdMsg.phi_f * 180.f / M_PI);
@@ -200,7 +213,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       image_point_vec.clear();
       float forward_draw_distance = 0.1f;
       world_point_vec.push_back(cv::Point2f(0.1f, 0.f));
-      world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance, std::tan(kappa)*forward_draw_distance));
+      world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance,
+                                            std::tan(kappa*understeerFactor)*forward_draw_distance));
       image_operator_.worldToWarpedImg(world_point_vec, image_point_vec);
       cv::arrowedLine(debug_img_, image_point_vec[0], image_point_vec[1], cv::Scalar(0, 0, 255), 2);
       sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg();
@@ -210,14 +224,14 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   //}
 }
 
-void TrajectoryLineCreator::reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config,
-                                          uint32_t level) {
-	minForwardDist = config.min_forward_dist;
-	currentVelocity = config.current_velocity;
-  crossingTurnAngle = config.crossing_turn_angle;
+void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {
+  minForwardDist = config.min_forward_dist;
+  currentVelocity = config.current_velocity;
+  crossingTurnAngleLeft = config.crossing_turn_angle_left;
+  crossingTurnAngleRight = config.crossing_turn_angle_right;
   laneWidth = config.lane_width;
   hardcodedForwardDistance = config.hardcoded_forward_distance;
   understeerFactor = config.understeer_factor;
 }
 
-} // end namespace drive_ros_trajectory_generator
+} // end namespace trajectory_generator
