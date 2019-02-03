@@ -51,6 +51,7 @@ endif(SUBSCRIBE_DEBUG)
 add_executable(trajectory_line_creator_node
         src/trajectory_line_creator.cpp
         src/trajectory_line_creator_node.cpp
+        src/parking.cpp
         )
 
 add_dependencies(trajectory_line_creator_node ${drive_ros_msgs_generate_messages_cpp}
@@ -82,7 +83,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
         )
 
 install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
         FILES_MATCHING PATTERN "*.launch"
         )
 

@@ -14,7 +14,7 @@
 #endif
 #include <drive_ros_image_recognition/common_image_operations.h>
 
-namespace drive_ros_trajectory_generator{
+namespace trajectory_generator{
 
 class TrajectoryLineCreator {
 
@@ -41,7 +41,8 @@ private:
 
     //  for commands from BT
     float laneWidth = 0.4f;
-    float crossingTurnAngle = 0.4f;
+    float crossingTurnAngleLeft = 0.35f;
+    float crossingTurnAngleRight = 0.6f;
     short int drivingCommand = drive_ros_msgs::TrajectoryMetaInput::STANDARD;
 
     void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg);
@@ -58,10 +59,10 @@ private:
     std::string stream_name_ = "TRAJECTORY_GENERATOR";
 
     // Dynamic reconfigure
-    void reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
-    dynamic_reconfigure::Server<drive_ros_trajectory_generator::TrajectoryLineCreationConfig> reconfigure_server_;
+    void reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
+    dynamic_reconfigure::Server<trajectory_generator::TrajectoryLineCreationConfig> reconfigure_server_;
 };
 
-} // namespace drive_ros_trajectory_generator
+} // namespace trajectory_generator
 
 #endif // TRAJECTORY_LINE_CREATOR_H

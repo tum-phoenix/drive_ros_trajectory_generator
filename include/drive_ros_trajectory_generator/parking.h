@@ -41,12 +41,13 @@ public:
     void setSteeringAngles(double y_soll, double phi_soll, double y_ist, double phi_ist, int drivingMode);
     double getDistanceToMiddleLane();
 
+    void scanCB(const sensor_msgs::LaserScanConstPtr &scan);
     void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
                                  const sensor_msgs::LaserScanConstPtr &scan);
     ros::Subscriber parking_spot_sub_;
     message_filters::Subscriber<drive_ros_msgs::DrivingLine> driving_line_sub_;
     message_filters::Subscriber<sensor_msgs::LaserScan> laser_sub_;
-    message_filters::TimeSynchronizer<drive_ros_msgs::DrivingLine, drive_ros_msgs::ObstacleArray> sync_;
+    message_filters::TimeSynchronizer<drive_ros_msgs::DrivingLine, sensor_msgs::LaserScan> sync_;
     ros::Publisher drive_command_pub_;
     std::string stream_name_ = "parking_controller";
     PullOutState pulloutstate;

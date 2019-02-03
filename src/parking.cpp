@@ -1,5 +1,6 @@
 #include <drive_ros_trajectory_generator/parking.h>
 #include <drive_ros_environment_model/sign_string_to_id.h>
+#include <limits>
 
 Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh) :
   driving_line_sub_(nh, "driving_line_in", 1),
@@ -38,24 +39,26 @@ Parking::Parking(ros::NodeHandle &nh, ros::NodeHandle &pnh) :
   distanceToObstacleFront = 0;
 }
 
+void scanCB(const sensor_msgs::LaserScanConstPtr &scan){
+
+}
+
 void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
                              const sensor_msgs::LaserScanConstPtr &scan)
 {
   bool validDistanceToObstacleFront = false;
-  const float maxDetectionAngle = config().get<float>("obstacleDetectionAngle",30)*M_PI/180;
-  // TODO: subscribe to laserscan to measure distances to front/back
-  if(laser_data->points().size() > 0) {
-    float smallestDistance = FLT_MAX;
+  const float maxDetectionAngle = cfg_.obstacle_detection_angle*M_PI/180;
+  if (laser_data->points().size() > 0) {
+    float smallestDistance = std::numeric_limits<float>::lowest();
     int added = 0;
 
     for(const lms::math::vertex2f &v: laser_data->points())
     {
-      if(std::fabs(v.angle()) < maxDetectionAngle){
+      if(std::fabs(v.angle()) < maxDetectionAngle) {
         // get smallest distance
-        if(v.length() < smallestDistance){
+        if(v.length() < smallestDistance) {
           smallestDistance = v.length();
           added++;
-
         }
       }
     }

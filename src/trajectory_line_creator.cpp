@@ -1,20 +1,20 @@
 #include "drive_ros_trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
-#include <drive_ros_environment_model/polygon_msg_operations.h>
+#include <drive_ros_trajectory_generator/polygon_msg_operations.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <sensor_msgs/Image.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #endif
 
-namespace drive_ros_trajectory_generator {
+namespace trajectory_generator {
 
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
 TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle pnh)
-	: pnh_(pnh)
-	, reconfigure_server_()
+    : pnh_(pnh)
+    , reconfigure_server_()
 #ifdef SUBSCRIBE_DEBUG
   , it_(nh)
   , image_operator_()
@@ -70,23 +70,26 @@ void TrajectoryLineCreator::metaInputCB(const drive_ros_msgs::TrajectoryMetaInpu
 }
 
 void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg) {
-	// ===========================
-	// 			velocity
-	// ===========================
+    // ===========================
+    // 			velocity
+    // ===========================
   ROS_INFO_NAMED(stream_name_, "---");
   ROS_INFO_NAMED(stream_name_, "detection range = %.2f", msg->detectionRange);
 
-	// calculate forward velocity
-	float forwardDistanceX = minForwardDist + std::abs(currentVelocity) * k1;
+    // calculate forward velocity
+    float forwardDistanceX = minForwardDist + std::abs(currentVelocity) * k1;
   forwardDistanceX = hardcodedForwardDistance; //std::min(forwardDistanceX, msg->detectionRange); // limit to detectionRange
 
-	// get y from polynom
-	float forwardDistanceY = 0.f;
+    // get y from polynom
+    float forwardDistanceY = 0.f;
 
   // handle lane changes and hard-coded turn/drive commands
   float laneChangeDistance = 0.f;
   float presetSteeringAngle;
   bool steeringAngleFixed = false;
+  bool steerFrontAndRear = false;
+  drive_ros_uavcan::phoenix_msgs__NucDriveCommand::_blink_com_type blink_com =
+          drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
   switch (drivingCommand) {
     case (drive_ros_msgs::TrajectoryMetaInput::STANDARD):
       // nothing to do
@@ -94,20 +97,26 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_LEFT):
       // shift lane distance to the left
       laneChangeDistance = laneWidth;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
+      steerFrontAndRear = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_RIGHT):
       // shift lane distance to the right
       laneChangeDistance = -laneWidth;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
+      steerFrontAndRear = true;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
       // hard-code steering angle to the left
-      presetSteeringAngle = crossingTurnAngle;
+      presetSteeringAngle = crossingTurnAngleLeft;
       steeringAngleFixed = true;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::TURN_RIGHT):
       // hard code steering angle to the right
-      presetSteeringAngle = -crossingTurnAngle;
+      presetSteeringAngle = -crossingTurnAngleRight;
       steeringAngleFixed = true;
+      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
     break;
     case (drive_ros_msgs::TrajectoryMetaInput::STRAIGHT_FORWARD):
       // fix steering to go straight
@@ -139,45 +148,49 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   ROS_INFO_NAMED(stream_name_, "Goal point (%.2f, %.2f)", forwardDistanceX, forwardDistanceY);
   ROS_INFO_NAMED(stream_name_, "Kappa = %.5f", kappa);
 
-	// TODO: querbeschleunigung
+    // TODO: querbeschleunigung
 
   float vGoal = vMax - std::abs(kappa) * (vMax - vMin);
 
   ROS_INFO_NAMED(stream_name_, "vGoal = %f", vGoal);
 
-	// ===========================
-	// 		steering angles
-	// ===========================
+    // ===========================
+    // 		steering angles
+    // ===========================
 
-	float phiAtGoalX = 0.f; // deviate the polynom
-	for(int i = 1; i <= msg->polynom_order; i++) {
-		float tmp = msg->polynom_params.at(i) * i;
-		for(int j = 1; j < i; j++) {
-			tmp *= forwardDistanceX;
-		}
-		phiAtGoalX += tmp;
-	}
+    float phiAtGoalX = 0.f; // deviate the polynom
+    for(int i = 1; i <= msg->polynom_order; i++) {
+        float tmp = msg->polynom_params.at(i) * i;
+        for(int j = 1; j < i; j++) {
+            tmp *= forwardDistanceX;
+        }
+        phiAtGoalX += tmp;
+    }
 
   ROS_INFO_NAMED(stream_name_, "polynom(x)  = %.2f", forwardDistanceY);
   ROS_INFO_NAMED(stream_name_, "polynom'(x) = %.2f", phiAtGoalX);
 
-	// radius is also turnRadiusY
-	float radius = forwardDistanceY / (1.f - std::sin(M_PI_2 - phiAtGoalX));
+    // radius is also turnRadiusY
+    float radius = forwardDistanceY / (1.f - std::sin(M_PI_2 - phiAtGoalX));
 
   float turnRadiusX = -((forwardDistanceY * std::cos(M_PI_2 - phiAtGoalX)) / (1.f - std::sin(M_PI_2 - phiAtGoalX))) + forwardDistanceX;
 
   ROS_INFO_NAMED(stream_name_, "Turning point (%.2f, %.2f)", turnRadiusX, radius);
 
-	float steeringAngleRear  = - std::atan(turnRadiusX                  / (radius + (0.001f*(radius == 0.f))));
-	float steeringAngleFront = - std::atan((turnRadiusX - axisDistance) / (radius + (0.001f*(radius == 0.f))));
+    float steeringAngleRear  = - std::atan(turnRadiusX                  / (radius + (0.001f*(radius == 0.f))));
+    float steeringAngleFront = - std::atan((turnRadiusX - axisDistance) / (radius + (0.001f*(radius == 0.f))));
 
   //ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
   //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
 
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
   driveCmdMsg.phi_f = -kappa*understeerFactor;
-  driveCmdMsg.phi_r = 0.0f;
+  if (!steerFrontAndRear)
+    driveCmdMsg.phi_r = 0.0f;
+  else
+    driveCmdMsg.phi_r = -kappa*understeerFactor;
   driveCmdMsg.lin_vel = vGoal;
+  driveCmdMsg.blink_com = blink_com;
 
   //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
   ROS_INFO_NAMED(stream_name_, "Steering front = %.1f[deg]", driveCmdMsg.phi_f * 180.f / M_PI);
@@ -200,7 +213,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       image_point_vec.clear();
       float forward_draw_distance = 0.1f;
       world_point_vec.push_back(cv::Point2f(0.1f, 0.f));
-      world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance, std::tan(kappa)*forward_draw_distance));
+      world_point_vec.push_back(cv::Point2f(0.1f+forward_draw_distance,
+                                            std::tan(kappa*understeerFactor)*forward_draw_distance));
       image_operator_.worldToWarpedImg(world_point_vec, image_point_vec);
       cv::arrowedLine(debug_img_, image_point_vec[0], image_point_vec[1], cv::Scalar(0, 0, 255), 2);
       sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", debug_img_).toImageMsg();
@@ -210,14 +224,14 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   //}
 }
 
-void TrajectoryLineCreator::reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config,
-                                          uint32_t level) {
-	minForwardDist = config.min_forward_dist;
-	currentVelocity = config.current_velocity;
-  crossingTurnAngle = config.crossing_turn_angle;
+void TrajectoryLineCreator::reconfigureCB(trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level) {
+  minForwardDist = config.min_forward_dist;
+  currentVelocity = config.current_velocity;
+  crossingTurnAngleLeft = config.crossing_turn_angle_left;
+  crossingTurnAngleRight = config.crossing_turn_angle_right;
   laneWidth = config.lane_width;
   hardcodedForwardDistance = config.hardcoded_forward_distance;
   understeerFactor = config.understeer_factor;
 }
 
-} // end namespace drive_ros_trajectory_generator
+} // end namespace trajectory_generator
