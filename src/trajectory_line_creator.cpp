@@ -13,8 +13,8 @@ template <typename T> int sgn(T val) {
 }
 
 TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle pnh)
-	: pnh_(pnh)
-	, reconfigure_server_()
+    : pnh_(pnh)
+    , reconfigure_server_()
 #ifdef SUBSCRIBE_DEBUG
   , it_(nh)
   , image_operator_()
@@ -70,18 +70,18 @@ void TrajectoryLineCreator::metaInputCB(const drive_ros_msgs::TrajectoryMetaInpu
 }
 
 void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg) {
-	// ===========================
-	// 			velocity
-	// ===========================
+    // ===========================
+    // 			velocity
+    // ===========================
   ROS_INFO_NAMED(stream_name_, "---");
   ROS_INFO_NAMED(stream_name_, "detection range = %.2f", msg->detectionRange);
 
-	// calculate forward velocity
-	float forwardDistanceX = minForwardDist + std::abs(currentVelocity) * k1;
+    // calculate forward velocity
+    float forwardDistanceX = minForwardDist + std::abs(currentVelocity) * k1;
   forwardDistanceX = hardcodedForwardDistance; //std::min(forwardDistanceX, msg->detectionRange); // limit to detectionRange
 
-	// get y from polynom
-	float forwardDistanceY = 0.f;
+    // get y from polynom
+    float forwardDistanceY = 0.f;
 
   // handle lane changes and hard-coded turn/drive commands
   float laneChangeDistance = 0.f;
@@ -148,37 +148,37 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   ROS_INFO_NAMED(stream_name_, "Goal point (%.2f, %.2f)", forwardDistanceX, forwardDistanceY);
   ROS_INFO_NAMED(stream_name_, "Kappa = %.5f", kappa);
 
-	// TODO: querbeschleunigung
+    // TODO: querbeschleunigung
 
   float vGoal = vMax - std::abs(kappa) * (vMax - vMin);
 
   ROS_INFO_NAMED(stream_name_, "vGoal = %f", vGoal);
 
-	// ===========================
-	// 		steering angles
-	// ===========================
+    // ===========================
+    // 		steering angles
+    // ===========================
 
-	float phiAtGoalX = 0.f; // deviate the polynom
-	for(int i = 1; i <= msg->polynom_order; i++) {
-		float tmp = msg->polynom_params.at(i) * i;
-		for(int j = 1; j < i; j++) {
-			tmp *= forwardDistanceX;
-		}
-		phiAtGoalX += tmp;
-	}
+    float phiAtGoalX = 0.f; // deviate the polynom
+    for(int i = 1; i <= msg->polynom_order; i++) {
+        float tmp = msg->polynom_params.at(i) * i;
+        for(int j = 1; j < i; j++) {
+            tmp *= forwardDistanceX;
+        }
+        phiAtGoalX += tmp;
+    }
 
   ROS_INFO_NAMED(stream_name_, "polynom(x)  = %.2f", forwardDistanceY);
   ROS_INFO_NAMED(stream_name_, "polynom'(x) = %.2f", phiAtGoalX);
 
-	// radius is also turnRadiusY
-	float radius = forwardDistanceY / (1.f - std::sin(M_PI_2 - phiAtGoalX));
+    // radius is also turnRadiusY
+    float radius = forwardDistanceY / (1.f - std::sin(M_PI_2 - phiAtGoalX));
 
   float turnRadiusX = -((forwardDistanceY * std::cos(M_PI_2 - phiAtGoalX)) / (1.f - std::sin(M_PI_2 - phiAtGoalX))) + forwardDistanceX;
 
   ROS_INFO_NAMED(stream_name_, "Turning point (%.2f, %.2f)", turnRadiusX, radius);
 
-	float steeringAngleRear  = - std::atan(turnRadiusX                  / (radius + (0.001f*(radius == 0.f))));
-	float steeringAngleFront = - std::atan((turnRadiusX - axisDistance) / (radius + (0.001f*(radius == 0.f))));
+    float steeringAngleRear  = - std::atan(turnRadiusX                  / (radius + (0.001f*(radius == 0.f))));
+    float steeringAngleFront = - std::atan((turnRadiusX - axisDistance) / (radius + (0.001f*(radius == 0.f))));
 
   //ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
   //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);

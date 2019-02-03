@@ -9,7 +9,7 @@
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
 #include <drive_ros_msgs/DrivingLine.h>
 #include <sensor_msgs/LaserScan.h>
-#include <drive_ros_trajectory_generator/TrajectoryLineCreation.cfg>
+#include <drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h>
 #include <drive_ros_msgs/EnvironmentModel.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/subscriber.h>
