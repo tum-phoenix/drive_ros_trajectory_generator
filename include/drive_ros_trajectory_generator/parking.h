@@ -43,8 +43,9 @@ public:
     double getDistanceToMiddleLane();
 
     void scanCB(const sensor_msgs::LaserScanConstPtr &scan);
-    void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
-                                 const sensor_msgs::LaserScanConstPtr &scan);
+    void setReconfigure(const drive_ros_trajectory_generator::TrajectoryLineCreationConfig cfg);
+//    void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
+//                                 const sensor_msgs::LaserScanConstPtr &scan);
     ros::Subscriber scan_sub_;
     ros::Publisher drive_command_pub_;
     std::string stream_name_ = "parking_controller";

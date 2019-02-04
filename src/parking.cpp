@@ -102,6 +102,11 @@ void Parking::scanCB(const sensor_msgs::LaserScanConstPtr &scan){
     }
 }
 
+void Parking::setReconfigure(const drive_ros_trajectory_generator::TrajectoryLineCreationConfig cfg)
+{
+    cfg_ = cfg;
+}
+
 bool Parking::triggerParking() {
   ROS_INFO_NAMED(stream_name_, "[PARKING] Starting to park");
 

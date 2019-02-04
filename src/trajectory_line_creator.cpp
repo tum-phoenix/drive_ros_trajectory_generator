@@ -15,6 +15,7 @@ template <typename T> int sgn(T val) {
 TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle pnh)
     : pnh_(pnh)
     , reconfigure_server_()
+    , parking_controller_(nh, pnh)
 #ifdef SUBSCRIBE_DEBUG
   , it_(nh)
   , image_operator_()
@@ -122,6 +123,9 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       // fix steering to go straight
       presetSteeringAngle = 0.f;
       steeringAngleFixed = true;
+    break;
+    case (drive_ros_msgs::TrajectoryMetaInput::PARKING):
+      parking_controller_.triggerParking();
     break;
   }
 
@@ -233,6 +237,7 @@ void TrajectoryLineCreator::reconfigureCB(drive_ros_trajectory_generator::Trajec
   laneWidth = config.lane_width;
   hardcodedForwardDistance = config.hardcoded_forward_distance;
   understeerFactor = config.understeer_factor;
+  parking_controller_.setReconfigure(config);
 }
 
 } // end namespace drive_ros_trajectory_generator

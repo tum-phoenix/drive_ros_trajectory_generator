@@ -13,6 +13,7 @@
 #include <cv_bridge/cv_bridge.h>
 #endif
 #include <drive_ros_image_recognition/common_image_operations.h>
+#include <drive_ros_trajectory_generator/parking.h>
 
 namespace drive_ros_trajectory_generator{
 
@@ -57,6 +58,7 @@ private:
 #endif
 
     std::string stream_name_ = "TRAJECTORY_GENERATOR";
+    Parking parking_controller_;
 
     // Dynamic reconfigure
     void reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);
