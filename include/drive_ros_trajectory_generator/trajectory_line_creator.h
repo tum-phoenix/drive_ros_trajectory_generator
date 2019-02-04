@@ -36,9 +36,9 @@ private:
     float vMax = 2.0f;
     float vMin = 0.1f;
     float axisDistance = 0.222f;
-    float understeerFactor = 0.65f;
+    float understeerFactor = 0.85f;
     // hardcoded for debugging purposes
-    float hardcodedForwardDistance = 1.f;
+    float hardcodedForwardDistance = 1.2f;
 
     //  for commands from BT
     float laneWidth = 0.4f;
@@ -59,6 +59,7 @@ private:
 
     std::string stream_name_ = "TRAJECTORY_GENERATOR";
     Parking parking_controller_;
+    bool parkingInProgress = false;
 
     // Dynamic reconfigure
     void reconfigureCB(drive_ros_trajectory_generator::TrajectoryLineCreationConfig& config, uint32_t level);

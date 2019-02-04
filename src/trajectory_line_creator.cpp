@@ -89,43 +89,55 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   float presetSteeringAngle;
   bool steeringAngleFixed = false;
   bool steerFrontAndRear = false;
+
+//  if(parkingInProgress) {
+//    parkingInProgress = !parking_controller_.triggerParking();
+//    return ;
+//  }
+
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand::_blink_com_type blink_com =
-          drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
+      drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
   switch (drivingCommand) {
-    case (drive_ros_msgs::TrajectoryMetaInput::STANDARD):
-      // nothing to do
+  case (drive_ros_msgs::TrajectoryMetaInput::STANDARD):
+    // nothing to do
     break;
-    case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_LEFT):
-      // shift lane distance to the left
-      laneChangeDistance = laneWidth;
-      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
-      steerFrontAndRear = true;
+  case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_LEFT):
+    // shift lane distance to the left
+    laneChangeDistance = laneWidth;
+    blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
+    steerFrontAndRear = true;
     break;
-    case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_RIGHT):
-      // shift lane distance to the right
-      laneChangeDistance = -laneWidth;
-      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
-      steerFrontAndRear = true;
+  case (drive_ros_msgs::TrajectoryMetaInput::SWITCH_RIGHT):
+    // shift lane distance to the right
+    laneChangeDistance = -laneWidth;
+    blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
+    steerFrontAndRear = true;
     break;
-    case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
-      // hard-code steering angle to the left
-      presetSteeringAngle = crossingTurnAngleLeft;
-      steeringAngleFixed = true;
-      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
+  case (drive_ros_msgs::TrajectoryMetaInput::TURN_LEFT):
+    // hard-code steering angle to the left
+    presetSteeringAngle = crossingTurnAngleLeft;
+    steeringAngleFixed = true;
+    blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_LEFT;
     break;
-    case (drive_ros_msgs::TrajectoryMetaInput::TURN_RIGHT):
-      // hard code steering angle to the right
-      presetSteeringAngle = -crossingTurnAngleRight;
-      steeringAngleFixed = true;
-      blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
+  case (drive_ros_msgs::TrajectoryMetaInput::TURN_RIGHT):
+    // hard code steering angle to the right
+    presetSteeringAngle = -crossingTurnAngleRight;
+    steeringAngleFixed = true;
+    blink_com = drive_ros_uavcan::phoenix_msgs__NucDriveCommand::BLINK_RIGHT;
     break;
-    case (drive_ros_msgs::TrajectoryMetaInput::STRAIGHT_FORWARD):
-      // fix steering to go straight
-      presetSteeringAngle = 0.f;
-      steeringAngleFixed = true;
+  case (drive_ros_msgs::TrajectoryMetaInput::STRAIGHT_FORWARD):
+    // fix steering to go straight
+    presetSteeringAngle = 0.f;
+    steeringAngleFixed = true;
     break;
-    case (drive_ros_msgs::TrajectoryMetaInput::PARKING):
-      parking_controller_.triggerParking();
+  case (drive_ros_msgs::TrajectoryMetaInput::PARKING):
+    parkingInProgress = true;
+    parkingInProgress = !parking_controller_.triggerParking();
+    //    while(!parking_controller_.triggerParking()) {
+    //      ros::spinOnce();
+    //      ROS_INFO("Parking in progress");
+    //    }
+
     break;
   }
 

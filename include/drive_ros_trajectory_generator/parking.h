@@ -8,6 +8,7 @@
 #include <drive_ros_uavcan/phoenix_msgs__ParallelParking.h>
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
 #include <drive_ros_msgs/DrivingLine.h>
+#include <drive_ros_msgs/ParkingInProgress.h>
 #include <sensor_msgs/LaserScan.h>
 #include "drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h"
 #include <drive_ros_msgs/EnvironmentModel.h>
@@ -44,10 +45,16 @@ public:
 
     void scanCB(const sensor_msgs::LaserScanConstPtr &scan);
     void setReconfigure(const drive_ros_trajectory_generator::TrajectoryLineCreationConfig cfg);
-//    void drivingLineToScanSyncCB(const drive_ros_msgs::DrivingLineConstPtr &driving_line,
-//                                 const sensor_msgs::LaserScanConstPtr &scan);
+    void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &drivingLineMsg);
+    void parallelParkingCB(const drive_ros_uavcan::phoenix_msgs__ParallelParkingConstPtr &parallelParkingMsg);
+    bool parkingInProgressCB(drive_ros_msgs::ParkingInProgress::Request &req,
+                             drive_ros_msgs::ParkingInProgress::Response &res);
+
     ros::Subscriber scan_sub_;
+    ros::Subscriber drivingLineSub_;
+    ros::Subscriber parallelParkingSub_;
     ros::Publisher drive_command_pub_;
+    ros::ServiceServer in_progress_service_;
     std::string stream_name_ = "parking_controller";
     PullOutState pulloutstate;
     ParkingState currentState;
@@ -69,6 +76,12 @@ public:
 
     double posXGap;
     double parkingSpaceSize;
+
+    bool done = false;
+    bool parkingInProgress = false;
+
+    bool drivingLineReceived = false;
+    drive_ros_msgs::DrivingLineConstPtr currentDrivingLine;
 
     bool measuringGap = false;
     ros::Time gapFoundAt;
