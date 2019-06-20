@@ -1,6 +1,5 @@
 #include "drive_ros_trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
-#include <drive_ros_>
 #include <drive_ros_trajectory_generator/polygon_msg_operations.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <sensor_msgs/Image.h>
@@ -33,6 +32,7 @@ bool TrajectoryLineCreator::init() {
   signSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
 
   canPub = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
+  Trajectory_publisher = nh_.advertise<drive_ros_msg::Trajectory>("Trajectory_topic", 5);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Publish uav_can messages on topic '%s'",
                  canPub.getTopic().c_str());
 
@@ -136,10 +136,22 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       steeringAngleFixed = true;
     break;
   }
-  float Xpoints[20];
-  float Ypoints[20];
+  Num_points=20
+  float Xpoints[Num_points];
+  float Ypoints[Num_points];
+  drive_ros_msgs::Trajectory msg_traj;
+  drive_ros_msgs::TrajectoryPoints msg_points;
+  for (int count=0;count<Num_points; count++){
+      //Xpoints=count*0.1;
+      //Ypoints=compute_polynomial_at_location(msg, forwardDistanXpointsceX);
+      msg_points.pose.x=count*0.1;
+      msg_points.pose.y=compute_polynomial_at_location(msg, forwardDistanXpointsceX);
+      msg_points.twist.linear=1.0;
+      msg_traj.points.push_back(msg_points);
 
-  forwardDistanceY = compute_polynomial_at_location(msg, forwardDistanceX);
+  };
+  Trajectory_publisher.publish(msg_traj)
+//forwardDistanceY = compute_polynomial_at_location(msg, forwardDistanceX);
 
   // compute derivative on carrot point to get normal if we need to offset ortogonally (lane change)
   if (laneChangeDistance != 0.f) {
@@ -191,20 +203,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 
   ROS_INFO_NAMED(stream_name_, "Turning point (%.2f, %.2f)", turnRadiusX, radius);
 
-	float steeringAngleRear  = - std::atan(turnRadiusX                  / (radius + (0.001f*(radius == 0.f))));
-	float steeringAngleFront = - std::atan((turnRadiusX - axisDistance) / (radius + (0.001f*(radius == 0.f))));
-
   //ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
   //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
-
-  drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
-  driveCmdMsg.phi_f = -kappa*understeerFactor;
-  if (!steerFrontAndRear)
-    driveCmdMsg.phi_r = 0.0f;
-  else
-    driveCmdMsg.phi_r = -kappa*understeerFactor;
-  driveCmdMsg.lin_vel = vGoal;
-  driveCmdMsg.blink_com = blink_com;
 
   //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
   ROS_INFO_NAMED(stream_name_, "Steering front = %.1f[deg]", driveCmdMsg.phi_f * 180.f / M_PI);

@@ -3,11 +3,12 @@
 
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
-
 #include "drive_ros_msgs/DrivingLine.h"
 #include "drive_ros_msgs/TrafficMarkEnvironment.h"
 #include "drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h"
 
+#include <drive_ros_msgs/Trajectory.h>
+#include <drive_ros_msgs/TrajectoryPoint.h>
 #include <drive_ros_msgs/TrajectoryMetaInput.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <image_transport/image_transport.h>
@@ -29,6 +30,7 @@ private:
     ros::Subscriber drivingLineSub;
     ros::Subscriber trajectory_meta_sub_;
     ros::Publisher canPub;
+    ros::Publisher Trajectory_publisher;
 
     float currentVelocity; // TODO
     float minForwardDist = 1.0f; // TODO
