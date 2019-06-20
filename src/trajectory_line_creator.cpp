@@ -1,5 +1,6 @@
 #include "drive_ros_trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
+#include <drive_ros_>
 #include <drive_ros_trajectory_generator/polygon_msg_operations.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <sensor_msgs/Image.h>
@@ -22,11 +23,14 @@ TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle
 {
   reconfigure_server_.setCallback(boost::bind(&TrajectoryLineCreator::reconfigureCB, this, _1, _2));
   trajectory_meta_sub_ = nh_.subscribe("meta_in", 10, &TrajectoryLineCreator::metaInputCB, this);
+  signs_input = nh_.subscribe("signs", 10, &TrajectoryLineCreator::signInputCB, this);
 }
 
 bool TrajectoryLineCreator::init() {
   drivingLineSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Subscribing on topic '%s'", drivingLineSub.getTopic().c_str());
+
+  signSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
 
   canPub = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Publish uav_can messages on topic '%s'",
@@ -69,6 +73,13 @@ void TrajectoryLineCreator::metaInputCB(const drive_ros_msgs::TrajectoryMetaInpu
   drivingCommand = msg->control_metadata;
 }
 
+void TrajectoryLineCreator::signCB(const drive_ros_msgs::TrafficMarkEnvironmentConstPtr &msg) {
+  int signId=msg->id;
+	switch
+	vSign =
+  drivingCommand = msg->control_metadata;
+}
+
 void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg) {
 	// ===========================
 	// 			velocity
@@ -88,6 +99,7 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
   float presetSteeringAngle;
   bool steeringAngleFixed = false;
   bool steerFrontAndRear = false;
+
   drive_ros_uavcan::phoenix_msgs__NucDriveCommand::_blink_com_type blink_com =
           drive_ros_uavcan::phoenix_msgs__NucDriveCommand::NO_BLINK;
   switch (drivingCommand) {
@@ -124,6 +136,8 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       steeringAngleFixed = true;
     break;
   }
+  float Xpoints[20];
+  float Ypoints[20];
 
   forwardDistanceY = compute_polynomial_at_location(msg, forwardDistanceX);
 

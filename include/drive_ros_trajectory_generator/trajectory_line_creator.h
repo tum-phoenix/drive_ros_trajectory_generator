@@ -5,6 +5,7 @@
 #include <dynamic_reconfigure/server.h>
 
 #include "drive_ros_msgs/DrivingLine.h"
+#include "drive_ros_msgs/TrafficMarkEnvironment.h"
 #include "drive_ros_trajectory_generator/TrajectoryLineCreationConfig.h"
 
 #include <drive_ros_msgs/TrajectoryMetaInput.h>
