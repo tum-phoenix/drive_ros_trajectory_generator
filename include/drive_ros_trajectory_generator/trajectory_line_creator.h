@@ -29,6 +29,7 @@ private:
 
     ros::Subscriber drivingLineSub;
     ros::Subscriber trajectory_meta_sub_;
+    ros::Subscriber signs_input;
     ros::Publisher canPub;
     ros::Publisher Trajectory_publisher;
 
@@ -50,6 +51,7 @@ private:
 
     void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg);
     void metaInputCB(const drive_ros_msgs::TrajectoryMetaInputConstPtr &msg);
+    void signCB(const drive_ros_msgs::TrafficMarkEnvironmentConstPtr &msg);
 #ifdef SUBSCRIBE_DEBUG
     image_transport::ImageTransport it_;
     image_transport::Subscriber debug_image_sub_;

@@ -1,6 +1,8 @@
 #include "drive_ros_trajectory_generator/trajectory_line_creator.h"
 #include <drive_ros_uavcan/phoenix_msgs__NucDriveCommand.h>
 #include <drive_ros_trajectory_generator/polygon_msg_operations.h>
+#include <drive_ros_msgs/Trajectory.h>
+#include <drive_ros_msgs/TrajectoryPoint.h>
 #ifdef SUBSCRIBE_DEBUG
 #include <sensor_msgs/Image.h>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -22,17 +24,17 @@ TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle
 {
   reconfigure_server_.setCallback(boost::bind(&TrajectoryLineCreator::reconfigureCB, this, _1, _2));
   trajectory_meta_sub_ = nh_.subscribe("meta_in", 10, &TrajectoryLineCreator::metaInputCB, this);
-  signs_input = nh_.subscribe("signs", 10, &TrajectoryLineCreator::signInputCB, this);
+  signs_input = nh_.subscribe("signs", 10, &TrajectoryLineCreator::signCB, this);
 }
 
 bool TrajectoryLineCreator::init() {
   drivingLineSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Subscribing on topic '%s'", drivingLineSub.getTopic().c_str());
 
-  signSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
+//signSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
 
   canPub = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
-  Trajectory_publisher = nh_.advertise<drive_ros_msg::Trajectory>("Trajectory_topic", 5);
+  Trajectory_publisher = nh_.advertise<drive_ros_msgs::Trajectory>("trajectory_generator/trajectory", 5);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Publish uav_can messages on topic '%s'",
                  canPub.getTopic().c_str());
 
@@ -74,10 +76,10 @@ void TrajectoryLineCreator::metaInputCB(const drive_ros_msgs::TrajectoryMetaInpu
 }
 
 void TrajectoryLineCreator::signCB(const drive_ros_msgs::TrafficMarkEnvironmentConstPtr &msg) {
-  int signId=msg->id;
-	switch
-	vSign =
-  drivingCommand = msg->control_metadata;
+  //int signId=msg->id;
+	//switch
+	//vSign =
+  //drivingCommand = msg->control_metadata;
 }
 
 void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg) {
@@ -136,22 +138,22 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
       steeringAngleFixed = true;
     break;
   }
-  Num_points=20
+  int Num_points=20;
   float Xpoints[Num_points];
   float Ypoints[Num_points];
   drive_ros_msgs::Trajectory msg_traj;
-  drive_ros_msgs::TrajectoryPoints msg_points;
-  for (int count=0;count<Num_points; count++){
+  drive_ros_msgs::TrajectoryPoint msg_points;
+  for (int count=1;count<Num_points; count++){
       //Xpoints=count*0.1;
       //Ypoints=compute_polynomial_at_location(msg, forwardDistanXpointsceX);
       msg_points.pose.x=count*0.1;
-      msg_points.pose.y=compute_polynomial_at_location(msg, forwardDistanXpointsceX);
-      msg_points.twist.linear=1.0;
+      msg_points.pose.y=compute_polynomial_at_location(msg, count*0.1);
+      msg_points.twist.x=1.0;
       msg_traj.points.push_back(msg_points);
 
   };
-  Trajectory_publisher.publish(msg_traj)
-//forwardDistanceY = compute_polynomial_at_location(msg, forwardDistanceX);
+  Trajectory_publisher.publish(msg_traj);
+  forwardDistanceY = compute_polynomial_at_location(msg, forwardDistanceX);
 
   // compute derivative on carrot point to get normal if we need to offset ortogonally (lane change)
   if (laneChangeDistance != 0.f) {
@@ -193,25 +195,37 @@ void TrajectoryLineCreator::drivingLineCB(const drive_ros_msgs::DrivingLineConst
 		phiAtGoalX += tmp;
 	}
 
-  ROS_INFO_NAMED(stream_name_, "polynom(x)  = %.2f", forwardDistanceY);
-  ROS_INFO_NAMED(stream_name_, "polynom'(x) = %.2f", phiAtGoalX);
+    ROS_INFO_NAMED(stream_name_, "polynom(x)  = %.2f", forwardDistanceY);
+    ROS_INFO_NAMED(stream_name_, "polynom'(x) = %.2f", phiAtGoalX);
 
-	// radius is also turnRadiusY
-	float radius = forwardDistanceY / (1.f - std::sin(M_PI_2 - phiAtGoalX));
+    // radius is also turnRadiusY
+    float radius = forwardDistanceY / (1.f - std::sin(M_PI_2 - phiAtGoalX));
 
-  float turnRadiusX = -((forwardDistanceY * std::cos(M_PI_2 - phiAtGoalX)) / (1.f - std::sin(M_PI_2 - phiAtGoalX))) + forwardDistanceX;
+    float turnRadiusX = -((forwardDistanceY * std::cos(M_PI_2 - phiAtGoalX)) / (1.f - std::sin(M_PI_2 - phiAtGoalX))) + forwardDistanceX;
 
-  ROS_INFO_NAMED(stream_name_, "Turning point (%.2f, %.2f)", turnRadiusX, radius);
+    ROS_INFO_NAMED(stream_name_, "Turning point (%.2f, %.2f)", turnRadiusX, radius);
 
-  //ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
-  //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
+    float steeringAngleRear  = - std::atan(turnRadiusX                  / (radius + (0.001f*(radius == 0.f))));
+    float steeringAngleFront = - std::atan((turnRadiusX - axisDistance) / (radius + (0.001f*(radius == 0.f))));
 
-  //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
-  ROS_INFO_NAMED(stream_name_, "Steering front = %.1f[deg]", driveCmdMsg.phi_f * 180.f / M_PI);
-  ROS_INFO_NAMED(stream_name_, "Steering rear  = %.1f[deg]", driveCmdMsg.phi_r * 180.f / M_PI);
+    //ROS_INFO("Steering front = %.1f[deg]", steeringAngleFront * 180.f / M_PI);
+    //ROS_INFO("Steering rear  = %.1f[deg]", steeringAngleRear * 180.f / M_PI);
 
-  canPub.publish(driveCmdMsg);
-  ROS_INFO_NAMED(stream_name_, "Published uavcan message");
+    drive_ros_uavcan::phoenix_msgs__NucDriveCommand driveCmdMsg;
+    driveCmdMsg.phi_f = -kappa*understeerFactor;
+    if (!steerFrontAndRear)
+        driveCmdMsg.phi_r = 0.0f;
+    else
+        driveCmdMsg.phi_r = -kappa*understeerFactor;
+    driveCmdMsg.lin_vel = vGoal;
+    driveCmdMsg.blink_com = blink_com;
+
+    //if(!isnanf(steeringAngleFront) && !isnanf(steeringAngleRear)) {
+    ROS_INFO_NAMED(stream_name_, "Steering front = %.1f[deg]", driveCmdMsg.phi_f * 180.f / M_PI);
+    ROS_INFO_NAMED(stream_name_, "Steering rear  = %.1f[deg]", driveCmdMsg.phi_r * 180.f / M_PI);
+
+    //canPub.publish(driveCmdMsg);
+    ROS_INFO_NAMED(stream_name_, "Published uavcan message");
 
 #ifdef SUBSCRIBE_DEBUG
   if (!debug_img_.empty()) {
