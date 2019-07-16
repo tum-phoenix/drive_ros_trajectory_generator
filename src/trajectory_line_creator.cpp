@@ -34,7 +34,7 @@ bool TrajectoryLineCreator::init() {
 //signSub = nh_.subscribe("line_in", 2, &TrajectoryLineCreator::drivingLineCB, this);
 
   canPub = nh_.advertise<drive_ros_uavcan::phoenix_msgs__NucDriveCommand>("can_topic", 5);
-  Trajectory_publisher = nh_.advertise<drive_ros_msgs::Trajectory>("trajectory_generator/trajectory", 5);
+  Trajectory_publisher = nh_.advertise<drive_ros_msgs::Trajectory>("trajectory_out", 5);
   ROS_INFO_NAMED(stream_name_, "[Trajectory Generator] Publish uav_can messages on topic '%s'",
                  canPub.getTopic().c_str());
 
