@@ -11,7 +11,7 @@ namespace trajectory_generator {
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
-
+// Simple line creator
 TrajectoryLineCreator::TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle pnh)
 	: pnh_(pnh)
 	, reconfigure_server_()
