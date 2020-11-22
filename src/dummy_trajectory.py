@@ -2,28 +2,42 @@ import rospy
 from drive_ros_msgs.msg import *
 from geometry_msgs.msg import Pose2D
 from nav_2d_msgs.msg import Twist2D
-
+import numpy as np
 
 def talker():
     pub = rospy.Publisher("trajectory_publisher", Trajectory, queue_size=10)
     rospy.init_node('PUB', anonymous=True)
     rate = rospy.Rate(10)  # 10hz
-    gen=drive_straight()
+    gen = drive_straight()
     while not rospy.is_shutdown():
         pub.publish(next(gen))
         rate.sleep()
 
 
 def get_straight():
-    straigth_point_x=[ Pose2D(x,0, 0) for x in range(500) ]
-    straigth_point_v=[ Twist2D(x,0, 0) for x in range(500) ]
-    return straigth_point_x,straigth_point_v
+    straight_point_x = [np.array([x, 0, 0]) for x in range(500)]
+    straights_point_v = [np.array([1, 0, 0]) for _ in range(500)]
+    return straight_point_x, straights_point_v
+
+
+def get_curves():
+    straight_point_x = [np.array([x, 0.5*x, 0]) for x in range(500)]
+    straights_point_v = [np.array([1, 0, 0]) for _ in range(500)]
+    return straight_point_x, straights_point_v
+
+
+def np_to_pose(pose):
+    return Pose2D(pose[0],pose[1],pose[2])
+
+
+def np_to_twist(pose):
+    return Twist2D(pose[0],pose[1],pose[2])
 
 
 def drive_straight():
-    pose, veleocity = get_straight()
+    pose, velocity = get_curves()
     for i in range(490):
-        yield Trajectory([TrajectoryPoint(pose[j],veleocity[j]) for j in range(i,i+10)])
+        yield Trajectory([TrajectoryPoint(np_to_pose(pose[j]-pose[i]), np_to_twist(velocity[j])) for j in range(i,i+10)])
 
 
 if __name__ == "__main__":
