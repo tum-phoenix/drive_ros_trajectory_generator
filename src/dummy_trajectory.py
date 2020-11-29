@@ -4,6 +4,7 @@ from geometry_msgs.msg import Pose2D
 from nav_2d_msgs.msg import Twist2D
 import numpy as np
 
+
 def talker():
     pub = rospy.Publisher("trajectory_publisher", Trajectory, queue_size=10)
     rospy.init_node('PUB', anonymous=True)
@@ -15,14 +16,14 @@ def talker():
 
 
 def get_straight():
-    straight_point_x = [np.array([x, 0, 0]) for x in range(500)]
-    straights_point_v = [np.array([1, 0, 0]) for _ in range(500)]
+    straight_point_x = [np.array([x, 0, 0]) for x in range(50000)]
+    straights_point_v = [np.array([1, 0, 0]) for _ in range(50000)]
     return straight_point_x, straights_point_v
 
 
 def get_curves():
-    straight_point_x = [np.array([x, 0.5*x, 0]) for x in range(500)]
-    straights_point_v = [np.array([1, 0, 0]) for _ in range(500)]
+    straight_point_x = [np.array([x, 0.5*x, 0]) for x in range(50000)]
+    straights_point_v = [np.array([1, 0, 0]) for _ in range(50000)]
     return straight_point_x, straights_point_v
 
 
@@ -36,7 +37,7 @@ def np_to_twist(pose):
 
 def drive_straight():
     pose, velocity = get_curves()
-    for i in range(490):
+    for i in range(49000):
         yield Trajectory([TrajectoryPoint(np_to_pose(pose[j]-pose[i]), np_to_twist(velocity[j])) for j in range(i,i+10)])
 
 
