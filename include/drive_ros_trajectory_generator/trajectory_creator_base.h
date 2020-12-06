@@ -6,15 +6,17 @@
 #define SRC_TRAJCTOR_CREATOR_BASE_H
 
 //  for commands from BT
+// width of a single lane
 const float laneWidth = 0.4f;  //0.350-0.450
+// steering angle when turning left at an intersection
 const float crossingTurnAngleLeft = 0.35f;
+//steering angle when turning right at an intersection
 const float crossingTurnAngleRight = 0.6f;
 
 class TrajctorCreatorBase {
 
 public:
     TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle pnh);
-    bool init();
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
