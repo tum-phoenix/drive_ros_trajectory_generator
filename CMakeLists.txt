@@ -14,10 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
         drive_ros_msgs
         dynamic_reconfigure
         drive_ros_uavcan
-        drive_ros_image_recognition
-        image_transport
-        sensor_msgs
-        cv_bridge
         )
 
 if (SUBSCRIBE_DEBUG)
@@ -31,7 +27,7 @@ generate_dynamic_reconfigure_options(
 
 catkin_package(
         INCLUDE_DIRS include
-        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure drive_ros_uavcan cv_bridge sensor_msgs image_transport drive_ros_image_recognition
+        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs dynamic_reconfigure drive_ros_uavcan
 )
 
 include_directories(
@@ -46,29 +42,29 @@ endif(SUBSCRIBE_DEBUG)
 ################################################################################
 # Trajectory Line Creator Node
 ################################################################################
-add_executable(trajectory_line_creator_node
-        src/trajectory_line_creator.cpp
-        src/trajectory_line_creator_node.cpp
-        )
-
-add_dependencies(trajectory_line_creator_node ${drive_ros_msgs_generate_messages_cpp}
-    ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(trajectory_line_creator_node
-        ${catkin_LIBRARIES}
-        )
-
-if (SUBSCRIBE_DEBUG)
-    target_link_libraries(trajectory_line_creator_node
-            ${OpenCV_LIBS}
-            )
-endif(SUBSCRIBE_DEBUG)
-
-install(TARGETS trajectory_line_creator_node
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        )
+#add_executable(trajectory_line_creator_node
+#        src/trajectory_line_creator.cpp
+#        src/trajectory_line_creator_node.cpp
+#        )
+#
+#add_dependencies(trajectory_line_creator_node ${drive_ros_msgs_generate_messages_cpp}
+#    ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#
+#target_link_libraries(trajectory_line_creator_node
+#        ${catkin_LIBRARIES}
+#        )
+#
+#if (SUBSCRIBE_DEBUG)
+#    target_link_libraries(trajectory_line_creator_node
+#            ${OpenCV_LIBS}
+#            )
+#endif(SUBSCRIBE_DEBUG)
+#
+#install(TARGETS trajectory_line_creator_node
+#        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+#        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#        )
 
 ################################################################################
 # Install other files
