@@ -7,11 +7,14 @@ import numpy as np
 
 def talker():
     pub = rospy.Publisher("trajectory_publisher", Trajectory, queue_size=10)
+    pub_global = rospy.Publisher("global_trajectory_publisher", Trajectory, queue_size=10)
     rospy.init_node('PUB', anonymous=True)
     rate = rospy.Rate(10)  # 10hz
     gen = drive_straight()
     while not rospy.is_shutdown():
-        pub.publish(next(gen))
+        global_trajectory, local_trajectory = next(gen)
+        pub.publish(local_trajectory)
+        pub_global.publish(global_trajectory)
         rate.sleep()
 
 
@@ -36,9 +39,9 @@ def np_to_twist(pose):
 
 
 def drive_straight():
-    pose, velocity = get_curves()
+    pose, velocity = get_straight()
     for i in range(49000):
-        yield Trajectory([TrajectoryPoint(np_to_pose(pose[j]-pose[i]), np_to_twist(velocity[j])) for j in range(i,i+10)])
+        yield Trajectory([TrajectoryPoint(np_to_pose(pose[j]), np_to_twist(velocity[j])) for j in range(len(pose))]),Trajectory([TrajectoryPoint(np_to_pose(pose[j]-pose[i]), np_to_twist(velocity[j])) for j in range(i,i+10)])
 
 
 if __name__ == "__main__":
