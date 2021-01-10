@@ -15,12 +15,15 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   drive_ros_msgs
   drive_ros_uavcan
+  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(CPPAD)
 
-
+generate_dynamic_reconfigure_options(
+    cfg/TrajectoryLineCreation.cfg
+)
 
 
 
@@ -32,7 +35,7 @@ find_package(CPPAD)
 
 catkin_package(
         INCLUDE_DIRS include
-        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs drive_ros_uavcan
+        CATKIN_DEPENDS roscpp std_msgs drive_ros_msgs drive_ros_uavcan dynamic_reconfigure
         DEPENDS CPPAD
 )
 
@@ -47,10 +50,10 @@ include_directories(
 # Trajectory Line Creator Node
 ################################################################################
 add_executable(trajectory_line_creator_node
-        #src/trajectory_line_creator.cpp
+        # src/trajectory_line_creator.cpp
         src/trajectory_line_creator_node.cpp
-        #src/trajectory_creator_base.cpp
-        #src/trajectory_creator_polynomial.cpp
+        src/trajectory_creator_base.cpp
+        src/trajectory_creator_polynomial.cpp
         )
 
 add_dependencies(trajectory_line_creator_node ${drive_ros_msgs_generate_messages_cpp}

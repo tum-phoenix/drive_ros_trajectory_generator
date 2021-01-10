@@ -4,12 +4,12 @@
 #include <ros/ros.h>
 #include <drive_ros_trajectory_generator/trajectory_creator_base.h>
 
-class TrajectoryCreatorPolynomial : public TrajctorCreatorBase{
+class TrajectoryCreatorPolynomial : public TrajectoryCreatorBase{
 public:
-  TrajectoryCreatorPolynomial(ros::NodeHandle nh, ros::NodeHandle pnh)
+  TrajectoryCreatorPolynomial(ros::NodeHandle nh, ros::NodeHandle pnh);
   ~TrajectoryCreatorPolynomial();
 private:
-  void drivingLineCB(const drive_ros_msgs::TrajectoryMetaInputConstPtr &msg);
+  void publishTrajectory() {return;}
 
 
 };

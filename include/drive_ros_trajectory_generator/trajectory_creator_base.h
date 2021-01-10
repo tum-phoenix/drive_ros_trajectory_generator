@@ -5,6 +5,10 @@
 #ifndef SRC_TRAJCTOR_CREATOR_BASE_H
 #define SRC_TRAJCTOR_CREATOR_BASE_H
 
+#include <ros/ros.h>
+#include "drive_ros_msgs/DrivingLine.h"
+#include "drive_ros_msgs/TrajectoryMetaInput.h"
+
 //  for commands from BT
 // width of a single lane
 const float laneWidth = 0.4f;  //0.350-0.450
@@ -13,10 +17,10 @@ const float crossingTurnAngleLeft = 0.35f;
 //steering angle when turning right at an intersection
 const float crossingTurnAngleRight = 0.6f;
 
-class TrajctorCreatorBase {
+class TrajectoryCreatorBase {
 
 public:
-    TrajectoryLineCreator(ros::NodeHandle nh, ros::NodeHandle pnh);
+    TrajectoryCreatorBase(ros::NodeHandle nh, ros::NodeHandle pnh);
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle pnh_;
@@ -36,6 +40,7 @@ private:
     void drivingLineCB(const drive_ros_msgs::DrivingLineConstPtr &msg);
     void metaInputCB(const drive_ros_msgs::TrajectoryMetaInputConstPtr &msg);
 
+    drive_ros_msgs::DrivingLine last_driving_line_;
 
 };
 
