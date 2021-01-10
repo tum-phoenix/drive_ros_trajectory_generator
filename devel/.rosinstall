@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/marvin/Documents/catkin_ws/src/drive_ros_config/modules/drive_ros_trajectory_generator/devel/setup.sh

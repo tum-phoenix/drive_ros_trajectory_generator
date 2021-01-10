@@ -1,0 +1,11 @@
+<launch>
+    <arg name="driving_line_topic" default="/driving_line"/>
+
+    <arg name="trajectory_meta_input_topic" default="/trajectory_meta_commands"/>
+
+
+    <arg name="output" default="screen"/>
+
+    <node name="trajectory_creator_base" pkg="drive_ros_trajectory_generator" type="drive_ros_trajectory_line_creator_node" respawn="false" output="$(arg output)"></node>
+
+</launch>

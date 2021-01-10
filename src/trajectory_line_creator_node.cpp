@@ -1,17 +1,19 @@
 #include <ros/ros.h>
 #include <drive_ros_trajectory_generator/trajectory_line_creator.h>
+//#include <drive_ros_trajectory_generator/trajectory_creator_polynomial.h>
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "trajectory_line_creator_node");
     ros::NodeHandle nh;
     ros::NodeHandle pnh("~");
 
-    trajectory_generator::TrajectoryLineCreator line_creator(nh, pnh);
-    if (!line_creator.init()) {
+    //trajectory_generator::TrajectoryLineCreator line_creator(nh, pnh);
+    //TrajectoryCreatorPolynomial trajectory_creator_polynomial(nh, pnh);
+    /*if (!line_creator.init()) {
         return 1;
     } else {
         ROS_INFO("Trajectory Line Creator node succesfully initialized");
-    }
+    }*/
 
 #ifndef NDEBUG
     // give GDB time to attach
@@ -23,4 +25,3 @@ int main(int argc, char **argv) {
     }
     return 0;
 }
-

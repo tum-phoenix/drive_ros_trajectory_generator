@@ -4,9 +4,11 @@
     <arg name="trajectory_meta_input_topic" default="/trajectory_meta_commands"/>
     <arg name="vision_debug" default="true"/>
 
+
     <arg name="camera" default="camera"/>
     <arg name="homography_topic" default="/$(arg camera)/camera_homography"/>
     <arg name="camera_info_topic" default="/$(arg camera)/camera_info"/>
+
 
     <arg name="debug_image_in" default="/line_detection/debug_image"/>
     <arg name="debug_image_out" default="/trajectory_controller/debug_image"/>
